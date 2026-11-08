@@ -948,19 +948,15 @@ function addChatMessage(message, sender) {
         }
 
         // SEND MESSAGE TO GEMINI AI BACKEND
-        const response = await fetch("https://slim-calculators-included-telecommunications.trycloudflare.com/chat", {
-
+        const response = await fetch("https://hero-picked-symbols-wed.trycloudflare.com/chat", {
             method: "POST",
-
             headers: {
                 "Content-Type": "application/json"
             },
-
             body: JSON.stringify({
                 message: message
             })
-
-        });
+        })
 
         const data = await response.json();
 
