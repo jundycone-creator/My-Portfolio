@@ -768,3 +768,225 @@ document.addEventListener("click", function(event) {
 
 });
 
+
+/* ===================================== */
+/* JUNDY PORTFOLIO CHATBOT */
+/* ===================================== */
+
+// ===============================
+// CHATBOT
+// ===============================
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const toggle = document.getElementById("chatbotToggle");
+    const chatWindow = document.getElementById("chatbotWindow");
+    const closeButton = document.getElementById("closeChatbot");
+    const messages = document.getElementById("chatbotMessages");
+    const input = document.getElementById("chatbotInput");
+    const sendButton = document.getElementById("chatbotSend");
+    const quickQuestions = document.querySelector(".chatbot-quick-questions");
+
+    // CHECK REQUIRED HTML ELEMENTS
+    if (!toggle || !chatWindow || !messages || !input || !sendButton) {
+        console.error("Chatbot error: One or more HTML elements are missing.");
+        return;
+    }
+
+    // OPEN CHATBOT
+    toggle.addEventListener("click", function () {
+        chatWindow.classList.toggle("active");
+    });
+
+    // CLOSE CHATBOT
+    if (closeButton) {
+        closeButton.addEventListener("click", function () {
+            chatWindow.classList.remove("active");
+        });
+    }
+
+    // DISPLAY MESSAGE
+    // ===============================
+// ADD CHAT MESSAGE
+// ===============================
+
+  function addChatMessage(message, sender) {
+
+    const messageElement = document.createElement("div");
+
+    messageElement.classList.add(
+        sender === "user" ? "user-message" : "bot-message"
+    );
+
+    if (
+        sender === "bot" &&
+        message.includes("https://www.google.com/maps/")
+    ) {
+
+        const mapURL = "https://www.google.com/maps/search/?api=1&query=Jundytech+Solutions";
+
+        const parts = message.split("https://www.google.com/maps/");
+
+        messageElement.textContent = parts[0];
+
+        const mapLink = document.createElement("a");
+
+        mapLink.href = mapURL;
+        mapLink.textContent = "📍 Open Location in Google Maps";
+        mapLink.target = "_blank";
+        mapLink.rel = "noopener noreferrer";
+
+        messageElement.appendChild(mapLink);
+
+    } else {
+
+        messageElement.textContent = message;
+    }
+
+    messages.appendChild(messageElement);
+    messages.scrollTop = messages.scrollHeight;
+}
+
+    // CHATBOT ANSWERS
+    function getChatbotResponse(message) {
+
+        const text = message.toLowerCase();
+
+        if (
+            text.includes("location") ||
+            text.includes("where") ||
+            text.includes("address") ||
+            text.includes("map")
+        ) {
+            return "You can find Jundytech Solutions here: https://www.google.com/maps/search/?api=1&query=Jundytech+Solutions";
+        }
+        if (
+            text.includes("about") ||
+            text.includes("who is") ||
+            text.includes("introduce")
+        ) {
+            return "Rodolfo Conejos is a Computer Engineering graduate with experience in IT support, computer troubleshooting, hardware maintenance, and technical assistance.";
+        }
+
+        if (text.includes("education") || text.includes("degree")) {
+            return "He graduated with a degree in Computer Engineering. He also has hands-on experience in technical support and computer-related projects.";
+        }
+
+        if (
+            text.includes("experience") ||
+            text.includes("work") ||
+            text.includes("job")
+        ) {
+            return "His experience includes managing Jundick's Gaming Hub, working as a Technical Assistant and Technical Support at Asian College of Technology, and completing an OJT as a CAD Operator at Verdida Surveying and Construction Services.";
+        }
+
+        if (
+            text.includes("skill") ||
+            text.includes("technical") ||
+            text.includes("programming")
+        ) {
+            return "His skills include computer hardware troubleshooting, Windows installation, software installation, computer maintenance, networking basics, printer troubleshooting, CCTV installation, and technical support.";
+        }
+
+        if (
+            text.includes("service") ||
+            text.includes("offer") ||
+            text.includes("business")
+        ) {
+            return "Jundick's Gaming Hub offers computer setup and upgrades, custom PC builds, troubleshooting, Windows reformatting, software installation, computer maintenance, printer services, and CCTV installation and maintenance.";
+        }
+
+        if (
+            text.includes("contact") ||
+            text.includes("email") ||
+            text.includes("reach")
+        ) {
+            return "You can contact Rodolfo through email at jundyconejos@gmail.com. You can also visit the Contact Me section of this portfolio.";
+        }
+
+        if (text.includes("resume") || text.includes("cv")) {
+            return "You can find his resume in this portfolio's resume section, if available.";
+        }
+
+        if (
+            text.includes("location") ||
+            text.includes("where") ||
+            text.includes("address") ||
+            text.includes("map")
+        ) {
+            return "You can find Jundytech Solutions here: https://www.google.com/maps/search/?api=1&query=Jundytech+Solutions";
+        }
+
+        if (
+            text.includes("hello") ||
+            text.includes("hi") ||
+            text.includes("good morning") ||
+            text.includes("good afternoon")
+        ) {
+            return "Hello! Welcome to my portfolio. What would you like to know about Jundy?";
+        }
+
+        if (
+            text.includes("thank") ||
+            text.includes("thanks")
+        ) {
+            return "You're welcome! Feel free to ask me anything else.";
+        }
+
+        return "I'm sorry, I don't have an answer for that yet. You can ask about Jundy's background, work experience, skills, services, or contact information.";
+    }
+
+    // SEND MESSAGE
+    function sendChatMessage(messageText) {
+
+        const message = (
+            messageText !== undefined ? messageText : input.value
+        ).trim();
+
+        if (message === "") return;
+
+        addChatMessage(message, "user");
+        input.value = "";
+
+        const response = getChatbotResponse(message);
+
+        setTimeout(function () {
+            addChatMessage(response, "bot");
+        }, 400);
+    }
+
+    // SEND BUTTON
+    sendButton.addEventListener("click", function () {
+        sendChatMessage();
+    });
+
+    // ENTER KEY
+    input.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            sendChatMessage();
+        }
+    });
+
+    // QUICK QUESTION BUTTONS
+    if (quickQuestions) {
+        quickQuestions.addEventListener("click", function (event) {
+
+            const button = event.target.closest("button[data-question]");
+
+            if (!button) return;
+
+            event.preventDefault();
+
+            const question = button.getAttribute("data-question");
+
+            if (question) {
+                sendChatMessage(question);
+            }
+        });
+    }
+
+    console.log("Chatbot successfully initialized!");
+
+});
+

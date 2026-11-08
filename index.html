@@ -126,7 +126,6 @@
         </section>
 
 
-<!-- WORK EXPERIENCE SECTION -->
 
 <!-- WORK EXPERIENCE SECTION -->
 <section class="experience" id="experience">
@@ -758,6 +757,90 @@
 
     <!-- JavaScript -->
     <script src="junds_script.js"></script>
+
+    
+        <!-- CHATBOT -->
+        <div class="chatbot-container" id="chatbotContainer">
+
+            <!-- CHATBOT TOGGLE BUTTON -->
+            <button type="button" class="chatbot-toggle" id="chatbotToggle">
+                <i class="fa-solid fa-comments"></i>
+            </button>
+
+            <!-- CHATBOT WINDOW -->
+            <div class="chatbot-window" id="chatbotWindow">
+
+                <!-- HEADER -->
+                <div class="chatbot-header">
+                    <div class="chatbot-title">
+                        <i class="fa-solid fa-robot"></i>
+                        <div>
+                            <h3>JUNDY ASSISTANT</h3>
+                            <span>● Online</span>
+                        </div>
+                    </div>
+
+                    <button id="closeChatbot" class="chatbot-close">
+                        &times;
+                    </button>
+                </div>
+
+                <!-- CHAT MESSAGES -->
+                <div class="chatbot-messages" id="chatbotMessages">
+                    <div class="bot-message">
+                        Hello! Welcome to my portfolio.
+                        I'm Jundy's virtual assistant.
+                        How can I help you today?
+                    </div>
+                </div>
+
+                <!-- QUICK QUESTIONS -->
+                <div class="chatbot-quick-questions">
+
+                <button type="button" data-question="Tell me about Jundy.">
+                    About Jundy
+                </button>
+
+                <button type="button" data-question="What is his work experience?">
+                    Work Experience
+                </button>
+
+                <button type="button" data-question="What are his technical skills?">
+                    Technical Skills
+                </button>
+
+                <button type="button" data-question="What services does he offer?">
+                    Services
+                </button>
+
+                <button type="button" data-question="How can I contact him?">
+                    Contact
+                </button>
+
+                <button type="button" data-question="Where is Jundytech Solutions located?">
+                    Location
+                </button>
+
+            </div>
+
+                <!-- MESSAGE INPUT -->
+                <div class="chatbot-input-area">
+                    <input
+                        type="text"
+                        id="chatbotInput"
+                        placeholder="Type your message..."
+                        autocomplete="off"
+                    >
+
+                    <button id="chatbotSend">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+        <!-- JAVASCRIPT -->
+        <script src="junds_script.js"></script>
 
 </body>
 </html>
