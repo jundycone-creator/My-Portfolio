@@ -626,3 +626,145 @@ experienceButtons.forEach(function(button) {
     });
 
 });
+
+
+
+// PORTFOLIO SEARCH FUNCTION
+
+const portfolioSearch = document.getElementById("portfolioSearch");
+const searchBtn = document.getElementById("searchBtn");
+const searchResults = document.getElementById("searchResults");
+
+const searchableSections = [
+    {
+        name: "Home",
+        keywords: ["home", "main page", "introduction"],
+        target: "home"
+    },
+    {
+        name: "About Me",
+        keywords: ["about", "profile", "background", "education"],
+        target: "about"
+    },
+    {
+        name: "Work Experience",
+        keywords: [
+            "experience",
+            "ojt",
+            "internship",
+            "cad operator",
+            "computer technician",
+            "it support",
+            "technical assistant",
+            "working scholar"
+        ],
+        target: "experience"
+    },
+    {
+        name: "My Skills",
+        keywords: [
+            "skills",
+            "hardware",
+            "software",
+            "networking",
+            "troubleshooting",
+            "programming"
+        ],
+        target: "skills"
+    },
+    {
+        name: "Contact Me",
+        keywords: ["contact", "email", "phone", "message"],
+        target: "contact"
+    }
+];
+
+function performSearch() {
+
+    const query = portfolioSearch.value.trim().toLowerCase();
+
+    searchResults.innerHTML = "";
+
+    if (!query) {
+        searchResults.classList.remove("active");
+        return;
+    }
+
+    const matches = searchableSections.filter(section => {
+
+        return section.name.toLowerCase().includes(query) ||
+            section.keywords.some(keyword => keyword.includes(query));
+
+    });
+
+    if (matches.length === 0) {
+        searchResults.innerHTML =
+            '<div class="search-empty">No results found.</div>';
+    } else {
+
+        matches.forEach(section => {
+
+            const result = document.createElement("button");
+
+            result.className = "search-result-item";
+            result.textContent = section.name;
+
+            result.addEventListener("click", () => {
+
+                const target = document.getElementById(section.target);
+
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start"
+                    });
+                }
+
+                portfolioSearch.value = "";
+                searchResults.classList.remove("active");
+
+            });
+
+            searchResults.appendChild(result);
+
+        });
+
+    }
+
+    searchResults.classList.add("active");
+}
+
+portfolioSearch.addEventListener("input", performSearch);
+
+searchBtn.addEventListener("click", performSearch);
+
+portfolioSearch.addEventListener("keydown", function(event) {
+
+    if (event.key === "Enter") {
+        event.preventDefault();
+
+        const firstResult = searchResults.querySelector(
+            ".search-result-item"
+        );
+
+        if (firstResult) {
+            firstResult.click();
+        } else {
+            performSearch();
+        }
+    }
+
+    if (event.key === "Escape") {
+        searchResults.classList.remove("active");
+    }
+
+});
+
+document.addEventListener("click", function(event) {
+
+    if (!event.target.closest(".search-container")) {
+        searchResults.classList.remove("active");
+    }
+
+});
+

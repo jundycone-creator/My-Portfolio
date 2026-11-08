@@ -19,31 +19,49 @@
     <link rel="stylesheet" href="Mydesign.css">
 
     
-    
 
 </head>
 
 <body>
 
-    <header class="header">
+    
+<header class="header">
 
-        <h1 class="logo" id="portfoliologo_clickable">PORTFOLIO<span>.</span></h1>
+    <h1 class="logo" id="portfoliologo_clickable">
+        PORTFOLIO<span>.</span>
+    </h1>
 
-        <button class="menu-toggle" id="menuToggle"
-                aria-label="Open navigation menu"
-                aria-expanded="false">
-            <i class="fa-solid fa-bars"></i>
+    <button class="menu-toggle" id="menuToggle"
+            aria-label="Open navigation menu"
+            aria-expanded="false">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <nav class="navbar" id="navbar">
+        <button data-target="home">Home</button>
+        <button data-target="about">About Me</button>
+        <button data-target="experience">Work Experience</button>
+        <button data-target="skills">My Skills</button>
+        <button data-target="contact">Contact Me</button>
+    </nav>
+
+    <div class="search-container">
+        <input
+            type="search"
+            id="portfolioSearch"
+            placeholder="Search..."
+            autocomplete="off"
+        >
+
+        <button id="searchBtn" aria-label="Search">
+            <i class="fa-solid fa-magnifying-glass"></i>
         </button>
 
-        <nav class="navbar" id="navbar">
-            <button data-target="home">Home</button>
-            <button data-target="about">About Me</button>
-            <button data-target="experience">Work Experience</button>
-            <button data-target="skills">My Skills</button>
-            <button data-target="contact">Contact Me</button>
-        </nav>
+        <div id="searchResults" class="search-results"></div>
+    </div>
 
-    </header>
+</header>
+
 
     <main>
 
