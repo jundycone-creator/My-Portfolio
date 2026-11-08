@@ -948,7 +948,7 @@ function addChatMessage(message, sender) {
         }
 
         // SEND MESSAGE TO GEMINI AI BACKEND
-        const response = await fetch("http://127.0.0.1:5000/chat", {
+        const response = await fetch("https://slim-calculators-included-telecommunications.trycloudflare.com/chat", {
 
             method: "POST",
 
