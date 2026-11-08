@@ -1,6 +1,6 @@
 
 import os
-
+from pathlib import Path
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -21,44 +21,19 @@ client = Groq(api_key=api_key)
 
 
 # PORTFOLIO INFORMATION
-PORTFOLIO_INFO = """
-You are JUNDY ASSISTANT, the AI virtual assistant of Rodolfo Conejos.
+# KNOWLEDGE BASE
+KNOWLEDGE_FILE = Path(__file__).parent / "knowledge" / "portfolio_knowledge.md"
 
-About:
-- Computer Engineering graduate.
-- IT Support Specialist and Computer Technician.
 
-Experience:
-1. Jundick's Gaming Hub:
-   Computer Technician / IT Support.
-   Handles computer shop management, PC troubleshooting,
-   computer assembly, Windows installation, software installation,
-   maintenance, printer repair and CCTV installation.
+def load_knowledge():
 
-2. Asian College of Technology:
-   Working Scholar / Technical Support.
-   Assisted with computer laboratory and office technical support,
-   hardware and software troubleshooting, and preventive maintenance.
+    try:
+        with open(KNOWLEDGE_FILE, "r", encoding="utf-8") as file:
+            return file.read()
 
-3. Verdida Surveying and Construction Services:
-   OJT CAD Operator.
-   Worked with AutoCAD land-lot plotting and technical support.
-
-Contact:
-Email: jundyconejos@gmail.com
-
-Location:
-Jundytech Solutions, Cebu City, Philippines.
-
-Instructions:
-- Answer naturally and professionally.
-- Use simple, understandable English.
-- Be friendly and helpful.
-- Answer based on the portfolio information.
-- Never invent qualifications, work experience, or contact details.
-- If information is unavailable, say so honestly.
-- Keep answers concise.
-"""
+    except FileNotFoundError:
+        print("Knowledge base file not found!")
+        return "No portfolio knowledge is currently available."
 
 
 @app.route("/", methods=["GET"])
@@ -66,6 +41,7 @@ def home():
     return jsonify({
         "status": "Jundy Assistant Groq backend is running!"
     })
+
 
 
 @app.route("/chat", methods=["POST"])
@@ -79,20 +55,88 @@ def chat():
         if not user_message:
             return jsonify({"error": "Message is empty"}), 400
 
+        # LOAD PORTFOLIO KNOWLEDGE
+        knowledge = load_knowledge()
+
+        print("\n========== KNOWLEDGE BASE CHECK ==========")
+        print("FILE PATH:", KNOWLEDGE_FILE)
+        print("FILE EXISTS:", KNOWLEDGE_FILE.exists())
+        print("CONTENT LENGTH:", len(knowledge))
+        print("CONTENT PREVIEW:")
+        print(knowledge[:1000])
+        print("==========================================\n")
+
+        system_prompt = f"""
+You are JUNDY ASSISTANT, the personal portfolio assistant
+of Rodolfo G. Conejos III.
+
+YOUR MAIN PURPOSE:
+Present Rodolfo's professional background, technical
+specialties, work experience, skills, and services.
+
+PORTFOLIO KNOWLEDGE:
+{knowledge}
+
+IMPORTANT RESPONSE RULES:
+
+1. ALWAYS prioritize the information in the portfolio
+   knowledge base when answering questions about Rodolfo.
+
+2. When someone asks about Rodolfo's specialty,
+   explain his computer-related specialties, including:
+   - Computer hardware troubleshooting and repair.
+   - Windows 10 and Windows 11 installation.
+   - Custom PC building and upgrades.
+   - Computer maintenance.
+   - Printer troubleshooting and repair.
+   - Basic networking.
+   - CCTV installation and maintenance.
+   - Basic web development and programming.
+
+3. When someone mentions a technical skill using
+   only a short phrase, interpret it as a question
+   about Rodolfo's experience with that skill.
+
+4. When asked about a specialty, explain what Rodolfo
+   actually does and where he gained that experience.
+
+5. Do not say that Rodolfo has no portfolio information
+   if the relevant information exists in the knowledge base.
+
+6. Do not invent certifications, qualifications,
+   projects, achievements, or technical experience.
+
+7. Distinguish Rodolfo's personal experience from
+   general technical explanations.
+
+8. Only provide tutorials or step-by-step instructions
+   when the visitor specifically asks how to perform
+   a technical task.
+
+9. If information is not available, acknowledge it
+   honestly instead of making up an answer.
+
+10. Use simple, professional, friendly English.
+
+Keep answers concise and relevant to the visitor's question.
+"""
+
         response = client.chat.completions.create(
             model="openai/gpt-oss-20b",
+
             messages=[
                 {
                     "role": "system",
-                    "content": PORTFOLIO_INFO
+                    "content": system_prompt
                 },
                 {
                     "role": "user",
                     "content": user_message
                 }
             ],
-            temperature=0.7,
-            max_completion_tokens=500
+
+            temperature=0.4,
+            max_completion_tokens=700
         )
 
         reply = response.choices[0].message.content
@@ -102,11 +146,13 @@ def chat():
         })
 
     except Exception as e:
+
         print("Groq Chatbot Error:", str(e))
 
         return jsonify({
             "error": "Sorry, the AI assistant is temporarily unavailable."
         }), 500
+
 
 
 if __name__ == "__main__":
