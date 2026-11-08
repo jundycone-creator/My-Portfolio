@@ -1,0 +1,14 @@
+# API keys and environment files
+.env
+*.env
+chatbot-backend/.env
+
+# Python virtual environments
+venv/
+.venv/
+chatbot-backend/venv/
+chatbot-backend/.venv/
+
+# Python cache
+__pycache__/
+*.pyc

@@ -859,7 +859,8 @@ document.addEventListener("DOMContentLoaded", function () {
 // ADD CHAT MESSAGE
 // ===============================
 
-  function addChatMessage(message, sender) {
+  
+function addChatMessage(message, sender) {
 
     const messageElement = document.createElement("div");
 
@@ -867,28 +868,58 @@ document.addEventListener("DOMContentLoaded", function () {
         sender === "user" ? "user-message" : "bot-message"
     );
 
-    if (
-        sender === "bot" &&
-        message.includes("https://www.google.com/maps/")
-    ) {
+    if (sender === "bot") {
 
-        const mapURL = "https://www.google.com/maps/search/?api=1&query=Jundytech+Solutions";
+        // GOOGLE MAPS LINK
+        if (message.includes("https://www.google.com/maps/")) {
 
-        const parts = message.split("https://www.google.com/maps/");
+            const mapURL = "https://www.google.com/maps/search/?api=1&query=Jundytech+Solutions";
 
-        messageElement.textContent = parts[0];
+            const parts = message.split("https://www.google.com/maps/");
 
-        const mapLink = document.createElement("a");
+            messageElement.textContent = parts[0];
 
-        mapLink.href = mapURL;
-        mapLink.textContent = "📍 Open Location in Google Maps";
-        mapLink.target = "_blank";
-        mapLink.rel = "noopener noreferrer";
+            const mapLink = document.createElement("a");
+            mapLink.href = mapURL;
+            mapLink.textContent = "📍 Open Location in Google Maps";
+            mapLink.target = "_blank";
+            mapLink.rel = "noopener noreferrer";
 
-        messageElement.appendChild(mapLink);
+            messageElement.appendChild(mapLink);
+
+        }
+
+        // GMAIL LINK
+        else if (message.includes("jundyconejos@gmail.com")) {
+
+            const parts = message.split("jundyconejos@gmail.com");
+
+            messageElement.appendChild(
+                document.createTextNode(parts[0])
+            );
+
+            const emailLink = document.createElement("a");
+
+            emailLink.href = "https://mail.google.com/mail/?view=cm&fs=1&to=jundyconejos@gmail.com";
+            emailLink.textContent = "jundyconejos@gmail.com";
+            emailLink.target = "_blank";
+            emailLink.rel = "noopener noreferrer";
+
+            messageElement.appendChild(emailLink);
+
+            if (parts[1]) {
+                messageElement.appendChild(
+                    document.createTextNode(parts[1])
+                );
+            }
+
+        }
+
+        else {
+            messageElement.textContent = message;
+        }
 
     } else {
-
         messageElement.textContent = message;
     }
 
@@ -896,68 +927,17 @@ document.addEventListener("DOMContentLoaded", function () {
     messages.scrollTop = messages.scrollHeight;
 }
 
-    // CHATBOT ANSWERS
-    function getChatbotResponse(message) {
+
+    
+    // ==========================================
+    // GEMINI AI CHATBOT RESPONSE
+    // ==========================================
+
+    async function getChatbotResponse(message) {
 
         const text = message.toLowerCase();
 
-        if (
-            text.includes("location") ||
-            text.includes("where") ||
-            text.includes("address") ||
-            text.includes("map")
-        ) {
-            return "You can find Jundytech Solutions here: https://www.google.com/maps/search/?api=1&query=Jundytech+Solutions";
-
-        }
-        if (
-            text.includes("about") ||
-            text.includes("who is") ||
-            text.includes("introduce")
-        ) {
-            return "Rodolfo Conejos is a Computer Engineering graduate with experience in IT support, computer troubleshooting, hardware maintenance, and technical assistance.";
-        }
-
-        if (text.includes("education") || text.includes("degree")) {
-            return "He graduated with a degree in Computer Engineering. He also has hands-on experience in technical support and computer-related projects.";
-        }
-
-        if (
-            text.includes("experience") ||
-            text.includes("work") ||
-            text.includes("job")
-        ) {
-            return "His experience includes managing Jundick's Gaming Hub, working as a Technical Assistant and Technical Support at Asian College of Technology, and completing an OJT as a CAD Operator at Verdida Surveying and Construction Services.";
-        }
-
-        if (
-            text.includes("skill") ||
-            text.includes("technical") ||
-            text.includes("programming")
-        ) {
-            return "His skills include computer hardware troubleshooting, Windows installation, software installation, computer maintenance, networking basics, printer troubleshooting, CCTV installation, and technical support.";
-        }
-
-        if (
-            text.includes("service") ||
-            text.includes("offer") ||
-            text.includes("business")
-        ) {
-            return "Jundick's Gaming Hub offers computer setup and upgrades, custom PC builds, troubleshooting, Windows reformatting, software installation, computer maintenance, printer services, and CCTV installation and maintenance.";
-        }
-
-        if (
-            text.includes("contact") ||
-            text.includes("email") ||
-            text.includes("reach")
-        ) {
-            return "You can contact Rodolfo through email at jundyconejos@gmail.com. You can also visit the Contact Me section of this portfolio.";
-        }
-
-        if (text.includes("resume") || text.includes("cv")) {
-            return "You can find his resume in this portfolio's resume section, if available.";
-        }
-
+        // KEEP GOOGLE MAPS FUNCTIONALITY
         if (
             text.includes("location") ||
             text.includes("where") ||
@@ -967,27 +947,36 @@ document.addEventListener("DOMContentLoaded", function () {
             return "You can find Jundytech Solutions here: https://www.google.com/maps/search/?api=1&query=Jundytech+Solutions";
         }
 
-        if (
-            text.includes("hello") ||
-            text.includes("hi") ||
-            text.includes("good morning") ||
-            text.includes("good afternoon")
-        ) {
-            return "Hello! Welcome to my portfolio. What would you like to know about Jundy?";
+        // SEND MESSAGE TO GEMINI AI BACKEND
+        const response = await fetch("http://127.0.0.1:5000/chat", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                message: message
+            })
+
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Unable to get AI response.");
         }
 
-        if (
-            text.includes("thank") ||
-            text.includes("thanks")
-        ) {
-            return "You're welcome! Feel free to ask me anything else.";
-        }
-
-        return "I'm sorry, I don't have an answer for that yet. You can ask about Jundy's background, work experience, skills, services, or contact information.";
+        return data.reply;
     }
 
-    // SEND MESSAGE
-    function sendChatMessage(messageText) {
+
+    // ==========================================
+    // SEND MESSAGE TO AI CHATBOT
+    // ==========================================
+
+    async function sendChatMessage(messageText) {
 
         const message = (
             messageText !== undefined ? messageText : input.value
@@ -995,15 +984,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (message === "") return;
 
+        // DISPLAY VISITOR MESSAGE
         addChatMessage(message, "user");
+
         input.value = "";
 
-        const response = getChatbotResponse(message);
+        try {
 
-        setTimeout(function () {
+            // GET AI RESPONSE
+            const response = await getChatbotResponse(message);
+
+            // DISPLAY AI RESPONSE
             addChatMessage(response, "bot");
-        }, 400);
+
+        } catch (error) {
+
+            console.error("AI Chatbot Error:", error);
+
+            addChatMessage(
+                "Sorry! I'm having trouble connecting to my AI assistant. Please try again.",
+                "bot"
+            );
+
+        }
     }
+
 
     // SEND BUTTON
     sendButton.addEventListener("click", function () {
@@ -1011,11 +1016,10 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // ENTER KEY
-    input.addEventListener("keydown", function (event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            sendChatMessage();
-        }
+    input.addEventListener("keypress", function (event) {
+    if (event.key === "Enter") {
+        sendChatMessage();
+    }
     });
 
     // QUICK QUESTION BUTTONS
