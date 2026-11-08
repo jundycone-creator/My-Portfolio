@@ -2769,3 +2769,26 @@ a {
     }
 }
 
+@media (max-width: 768px) {
+
+    #menuToggle {
+        position: relative;
+        z-index: 1001;
+        pointer-events: auto;
+        touch-action: manipulation;
+    }
+
+    #navbar {
+        z-index: 1000;
+    }
+
+    .skill-card,
+    .experience-click {
+        position: relative;
+        z-index: 2;
+        pointer-events: auto;
+        touch-action: manipulation;
+        cursor: pointer;
+    }
+
+}
