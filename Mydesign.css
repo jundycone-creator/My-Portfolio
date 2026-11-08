@@ -2792,3 +2792,27 @@ a {
     }
 
 }
+
+.experience-location {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.experience-location i {
+    color: #ff3333;
+    font-size: 15px;
+}
+
+.experience-location a {
+    color: #ff5555;
+    text-decoration: none;
+    transition: 0.3s ease;
+}
+
+.experience-location a:hover {
+    color: white;
+    text-decoration: underline;
+}
