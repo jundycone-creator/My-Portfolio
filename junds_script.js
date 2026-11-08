@@ -859,6 +859,7 @@ document.addEventListener("DOMContentLoaded", function () {
             text.includes("map")
         ) {
             return "You can find Jundytech Solutions here: https://www.google.com/maps/search/?api=1&query=Jundytech+Solutions";
+
         }
         if (
             text.includes("about") ||
