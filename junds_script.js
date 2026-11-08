@@ -956,9 +956,14 @@ function addChatMessage(message, sender) {
             body: JSON.stringify({
                 message: message
             })
-        })
+        });
+
+        // DEBUGGING
+        console.log("HTTP STATUS:", response.status);
 
         const data = await response.json();
+
+        console.log("BACKEND RESPONSE:", data);
 
         if (!response.ok) {
             throw new Error(data.error || "Unable to get AI response.");
