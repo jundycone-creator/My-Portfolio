@@ -1027,7 +1027,7 @@ function addChatMessage(message, sender) {
             console.error("AI Chatbot Error:", error);
 
             addChatMessage(
-                "Sorry! I'm having trouble connecting to my AI assistant. Please try again.",
+                "CHATBOT ERROR: " + error.message,
                 "bot"
             );
 
