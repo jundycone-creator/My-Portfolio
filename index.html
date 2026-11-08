@@ -72,7 +72,7 @@
 
                 <img src="PICS/GRAD PIC BW.png"
                      alt="Jundy Gagu profile picture"
-                     class="profile-picture">
+                     class="profile-picture profile-blurred">
 
                 <div class="picture-overlay">
                     <a href="FILES/Rodolfo_Conejos_Resume.pdf"
@@ -101,7 +101,27 @@
                     <p>IT Support</p>
                     <p>Computer Technician</p>
                 </div>
+            
+                <!-- HOME ACTION BUTTONS -->
+            <div class="home-buttons">
 
+                <button type="button" class="home-btn contact-btn" id="getInTouchButton">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    Get in Touch
+                </button>
+
+                <a href="FILES/Rodolfo_Conejos_Resume.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="home-btn view-resume-btn"
+                id="viewResumeButton">
+
+                    <i class="fa-solid fa-file-pdf"></i>
+                    View Resume
+
+                </a>
+
+            </div>
             </div>
 
         </section>
@@ -759,8 +779,14 @@
     <script src="junds_script.js"></script>
 
     
+        
         <!-- CHATBOT -->
         <div class="chatbot-container" id="chatbotContainer">
+
+            <!-- CHATBOT GREETING POPUP -->
+            <div class="chatbot-greeting" id="chatbotGreeting">
+                Hi! Need help exploring my portfolio? 👋
+            </div>
 
             <!-- CHATBOT TOGGLE BUTTON -->
             <button type="button" class="chatbot-toggle" id="chatbotToggle">
@@ -780,7 +806,7 @@
                         </div>
                     </div>
 
-                    <button id="closeChatbot" class="chatbot-close">
+                    <button type="button" id="closeChatbot" class="chatbot-close">
                         &times;
                     </button>
                 </div>
@@ -797,34 +823,35 @@
                 <!-- QUICK QUESTIONS -->
                 <div class="chatbot-quick-questions">
 
-                <button type="button" data-question="Tell me about Jundy.">
-                    About Jundy
-                </button>
+                    <button type="button" data-question="Tell me about Jundy.">
+                        About Jundy
+                    </button>
 
-                <button type="button" data-question="What is his work experience?">
-                    Work Experience
-                </button>
+                    <button type="button" data-question="What is his work experience?">
+                        Work Experience
+                    </button>
 
-                <button type="button" data-question="What are his technical skills?">
-                    Technical Skills
-                </button>
+                    <button type="button" data-question="What are his technical skills?">
+                        Technical Skills
+                    </button>
 
-                <button type="button" data-question="What services does he offer?">
-                    Services
-                </button>
+                    <button type="button" data-question="What services does he offer?">
+                        Services
+                    </button>
 
-                <button type="button" data-question="How can I contact him?">
-                    Contact
-                </button>
+                    <button type="button" data-question="How can I contact him?">
+                        Contact
+                    </button>
 
-                <button type="button" data-question="Where is Jundytech Solutions located?">
-                    Location
-                </button>
+                    <button type="button" data-question="Where is Jundytech Solutions located?">
+                        Location
+                    </button>
 
-            </div>
+                </div>
 
                 <!-- MESSAGE INPUT -->
                 <div class="chatbot-input-area">
+
                     <input
                         type="text"
                         id="chatbotInput"
@@ -832,13 +859,15 @@
                         autocomplete="off"
                     >
 
-                    <button id="chatbotSend">
+                    <button type="button" id="chatbotSend">
                         <i class="fa-solid fa-paper-plane"></i>
                     </button>
+
                 </div>
 
             </div>
         </div>
+
         <!-- JAVASCRIPT -->
         <script src="junds_script.js"></script>
 

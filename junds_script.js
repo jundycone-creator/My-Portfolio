@@ -787,6 +787,55 @@ document.addEventListener("DOMContentLoaded", function () {
     const sendButton = document.getElementById("chatbotSend");
     const quickQuestions = document.querySelector(".chatbot-quick-questions");
 
+            // ===============================
+        // RANDOM CHATBOT GREETINGS
+        // ===============================
+
+        const greeting = document.getElementById("chatbotGreeting");
+
+        const greetingMessages = [
+            "Hi! Need help exploring my portfolio? 👋",
+            "Hello there! Have questions about Jundy?",
+            "Want to know more about my technical skills?",
+            "Looking for my work experience? Ask me!",
+            "Feel free to chat with my virtual assistant!",
+            "Need help? I'm just one click away! 😊"
+        ];
+
+        let greetingTimeout;
+        let greetingInterval;
+
+        function showRandomGreeting() {
+
+            if (!greeting || chatWindow.classList.contains("active")) {
+                return;
+            }
+
+            const randomMessage =
+                greetingMessages[Math.floor(Math.random() * greetingMessages.length)];
+
+            greeting.textContent = randomMessage;
+            greeting.classList.add("show");
+
+            clearTimeout(greetingTimeout);
+
+            greetingTimeout = setTimeout(function () {
+                greeting.classList.remove("show");
+            }, 4000);
+        }
+
+        // FIRST GREETING AFTER 2 SECONDS
+        setTimeout(showRandomGreeting, 2000);
+
+        // REPEAT GREETINGS
+        greetingInterval = setInterval(function () {
+
+            if (!chatWindow.classList.contains("active")) {
+                showRandomGreeting();
+            }
+
+        }, 12000);
+
     // CHECK REQUIRED HTML ELEMENTS
     if (!toggle || !chatWindow || !messages || !input || !sendButton) {
         console.error("Chatbot error: One or more HTML elements are missing.");
@@ -988,6 +1037,53 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     console.log("Chatbot successfully initialized!");
+
+});
+
+// UNBLUR PROFILE WHEN GET IN TOUCH IS CLICKED
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const getInTouchButton = document.getElementById("getInTouchButton");
+    const profilePicture = document.querySelector(".profile-picture");
+
+    if (getInTouchButton && profilePicture) {
+
+        getInTouchButton.addEventListener("click", function () {
+
+            profilePicture.classList.remove("profile-blurred");
+            profilePicture.classList.add("profile-revealed");
+
+        });
+
+    }
+
+});
+
+// GET IN TOUCH - REVEAL PROFILE AND RESUME BUTTON
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const getInTouchButton = document.getElementById("getInTouchButton");
+    const viewResumeButton = document.getElementById("viewResumeButton");
+    const profilePicture = document.querySelector(".profile-picture");
+
+    if (getInTouchButton && viewResumeButton && profilePicture) {
+
+        getInTouchButton.addEventListener("click", function () {
+
+            // UNBLUR PROFILE PICTURE
+            profilePicture.classList.add("profile-revealed");
+
+            // HIDE GET IN TOUCH BUTTON
+            getInTouchButton.style.display = "none";
+
+            // SHOW VIEW RESUME BUTTON
+            viewResumeButton.classList.add("show");
+
+        });
+
+    }
 
 });
 
