@@ -933,6 +933,7 @@ function addChatMessage(message, sender) {
     // GEMINI AI CHATBOT RESPONSE
     // ==========================================
 
+    
     async function getChatbotResponse(message) {
 
         const text = message.toLowerCase();
@@ -947,30 +948,53 @@ function addChatMessage(message, sender) {
             return "You can find Jundytech Solutions here: https://www.google.com/maps/search/?api=1&query=Jundytech+Solutions";
         }
 
-        // SEND MESSAGE TO GEMINI AI BACKEND
-        const response = await fetch("https://hero-picked-symbols-wed.trycloudflare.com/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: message
-            })
-        });
+        try {
+            // CONNECT TO JUNDY ASSISTANT BACKEND
+            const response = await fetch(
+                "https://hero-picked-symbols-wed.trycloudflare.com/chat",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        message: message
+                    })
+                }
+            );
 
-        // DEBUGGING
-        console.log("HTTP STATUS:", response.status);
+            console.log("HTTP STATUS:", response.status);
 
-        const data = await response.json();
+            const responseText = await response.text();
 
-        console.log("BACKEND RESPONSE:", data);
+            console.log("RAW BACKEND RESPONSE:", responseText);
 
-        if (!response.ok) {
-            throw new Error(data.error || "Unable to get AI response.");
+            let data;
+
+            try {
+                data = JSON.parse(responseText);
+            } catch (error) {
+                throw new Error("Backend returned an invalid response.");
+            }
+
+            console.log("BACKEND DATA:", data);
+
+            if (!response.ok) {
+                throw new Error(data.error || "Backend request failed.");
+            }
+
+            if (!data.reply) {
+                throw new Error("Backend returned an empty AI reply.");
+            }
+
+            return data.reply;
+
+        } catch (error) {
+            console.error("JUNDY ASSISTANT ERROR:", error);
+            throw error;
         }
-
-        return data.reply;
     }
+
 
 
     // ==========================================
