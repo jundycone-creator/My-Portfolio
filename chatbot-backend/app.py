@@ -48,7 +48,12 @@ def home():
 def chat():
 
     try:
-        data = request.get_json() or {}
+        print("CONTENT TYPE:", request.content_type)
+        print("RAW REQUEST:", request.get_data(as_text=True))
+
+        data = request.get_json(silent=True) or {}
+
+        print("PARSED DATA:", data)
 
         user_message = data.get("message", "").strip()
 
