@@ -39,6 +39,99 @@ def load_knowledge():
         return "No portfolio knowledge is currently available."
 
 
+def get_relevant_knowledge(user_message):
+
+    knowledge = load_knowledge()
+
+    sections = {}
+    current_section = None
+
+    for line in knowledge.splitlines():
+
+        if line.startswith("## "):
+            current_section = line.strip()
+            sections[current_section] = []
+
+        elif current_section:
+            sections[current_section].append(line)
+
+    message = user_message.lower()
+
+    selected_sections = []
+
+    # Personal information
+    if any(word in message for word in [
+        "who", "name", "jundy", "age", "birthday",
+        "height", "handsome", "single", "relationship",
+        "location", "education", "degree", "course"
+    ]):
+        selected_sections += ["## 1. PERSONAL PROFILE"]
+
+    # Work experience and career
+    if any(word in message for word in [
+        "work", "experience", "career", "job",
+        "employer", "working scholar", "cad operator",
+        "resume", "responsibilities"
+    ]):
+        selected_sections += ["## 2. WORK EXPERIENCE"]
+
+    # Skills and technical knowledge
+    if any(word in message for word in [
+        "skill", "skills", "hardware", "software",
+        "troubleshoot", "troubleshooting", "programming",
+        "python", "html", "css", "javascript",
+        "windows", "network", "printer", "cctv",
+        "autocad", "technical"
+    ]):
+        selected_sections += [
+            "## 3. TECHNICAL SKILLS",
+            "## 4. TECHNICAL SPECIALTIES"
+        ]
+
+    # Projects
+    if any(word in message for word in [
+        "project", "projects", "capstone", "thesis"
+    ]):
+        selected_sections += ["## 5. PROJECTS"]
+
+    # Business information
+    if any(word in message for word in [
+        "business", "shop", "service", "services",
+        "jundytech", "price", "hours", "open",
+        "closed", "sunday", "repair", "pc build"
+    ]):
+        selected_sections += ["## 6. JUNDYTECH SOLUTIONS"]
+
+    # Contact information
+    if any(word in message for word in [
+        "contact", "email", "phone", "address"
+    ]):
+        selected_sections += ["## 7. CONTACT"]
+
+    # Assistant identity
+    if any(word in message for word in [
+        "assistant", "created", "creator", "ai",
+        "who made you"
+    ]):
+        selected_sections += ["## 8. JUNDY AI IDENTITY"]
+
+    # Remove duplicate section names
+    selected_sections = list(dict.fromkeys(selected_sections))
+
+    # If no category matches, provide the complete knowledge base
+    if not selected_sections:
+        return knowledge
+
+    relevant_knowledge = []
+
+    for section in selected_sections:
+        if section in sections:
+            content = "\n".join(sections[section])
+            relevant_knowledge.append(section + "\n" + content)
+
+    return "\n\n".join(relevant_knowledge)
+
+
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({
@@ -94,9 +187,8 @@ def chat():
         if not user_message:
             return jsonify({"error": "Message is empty"}), 400
 
-
-        # LOAD PORTFOLIO KNOWLEDGE
-        knowledge = load_knowledge()
+        # LOAD ONLY RELEVANT PORTFOLIO KNOWLEDGE
+        knowledge = get_relevant_knowledge(user_message)
 
         # CURRENT PHILIPPINE DATE AND TIME
         philippine_time = datetime.now(ZoneInfo("Asia/Manila"))
@@ -118,25 +210,46 @@ def chat():
 
         business_status = "OPEN" if is_business_open else "CLOSED"
 
-        time_information = f"""
-        CURRENT DATE AND TIME:
-        {current_time_context}
+        
+        normalized_message = user_message.lower().strip()
 
-        Timezone: Asia/Manila (Philippine Time, UTC+8).
+        # Check whether the question needs live time or business information
+        time_keywords = [
+            "what time", "current time", "what date",
+            "current date", "what day", "today",
+            "tomorrow", "yesterday", "right now",
+            "open", "closed", "business hours",
+            "shop hours", "operating hours",
+            "are you available", "are you open",
+            "is the shop", "is jundytech open",
+            "sunday", "monday", "tuesday",
+            "wednesday", "thursday", "friday", "saturday",
+            "unsa oras", "unsay oras", "unsa petsa",
+            "anong oras", "anong petsa", "bukas ba",
+            "open ba", "sarado ba"
+        ]
 
-        JUNDYTECH SOLUTIONS BUSINESS HOURS:
-        Monday to Saturday: 9:00 AM – 8:00 PM.
-        Sunday: Closed.
+        needs_time_info = any(
+            keyword in normalized_message
+            for keyword in time_keywords
+        )
 
-        CURRENT BUSINESS STATUS: {business_status}
+        # Only send live time information when needed
+        if needs_time_info:
+            time_information = f"""
+        Current Philippine time: {current_time_context}
+        Timezone: Asia/Manila (UTC+8).
+        Jundytech Solutions hours: Monday-Saturday, 9 AM-8 PM.
+        Sunday: Normally closed.
+        Current business status: {business_status}.
 
-        TIME AWARENESS RULES:
-        - Always use the current Philippine date and time.
-        - Use CURRENT BUSINESS STATUS when asked whether the shop is open.
-        - Understand today, tomorrow, yesterday, and other relative dates.
-        - Do not confuse shop hours with Rodolfo's personal availability.
-        - Never invent the current time or personal availability.
+        Use the current business status for opening-hour questions.
+        Do not confuse shop hours with Jundy's personal availability.
+        Never invent availability.
         """
+        else:
+            time_information = ""
+
 
                 
         # DIRECT RESPONSE FOR CURRENT DATE AND TIME
@@ -187,155 +300,43 @@ def chat():
         print(knowledge[:1000])
         print("==========================================\n")
 
+        
+                
         system_prompt = f"""
-        You are JUNDY ASSISTANT, the friendly personal portfolio
-        assistant of Rodolfo G. Conejos III, also known as Jundy.
+        You are JUNDY AI, the friendly portfolio assistant of Rodolfo G. Conejos III (Jundy).
 
-        YOUR PERSONALITY:
-        - Be friendly, approachable, helpful, and respectful.
-        - Sound natural, like a real person having a conversation.
-        - Avoid robotic, overly formal, or repetitive responses.
-        - Use simple and understandable language.
-        - Be playful and humorous when appropriate.
-        - Remain professional when discussing career-related topics.
+        PERSONALITY AND STYLE:
+        - Friendly, natural, respectful, and conversational.
+        - Use simple English by default; support Cebuano/Bisaya and Tagalog.
+        - Follow the visitor's preferred language.
+        - Answer directly and concisely.
+        - Simple questions: 1–3 sentences. Use bullets when helpful.
 
-        RESPONSE RULES:
-        - Be concise but informative.
-        - Answer the question directly.
-        - Use simple, natural English.
-        - Keep simple answers to 1–3 sentences.
-        - Include necessary details for technical questions.
-        - Avoid repeating information.
-        - Use bullet points when explaining multiple items.
-        - Never sacrifice accuracy for brevity.
-
-        PORTFOLIO KNOWLEDGE:
+        KNOWLEDGE:
         {knowledge}
 
-        LIVE TIME AND BUSINESS AVAILABILITY:
+        LIVE INFORMATION:
         {time_information}
+        - Use live information only when provided.
+        - Never guess the current time or business status.
 
-        TIME AWARENESS INSTRUCTIONS:
-        - You have access to the live Philippine date and time above.
-        - Never claim that you are not connected to a live clock.
-        - When asked for the current date or time, use the supplied timestamp.
-        - Never guess or invent the current date and time.
-        - Use the supplied business status when asked if Jundytech Solutions is open.
-        - Do not confuse shop operating hours with Rodolfo's personal availability.
+        ACCURACY:
+        - Use documented knowledge for Jundy's personal and business information.
+        - Jundy manages Jundytech Solutions. Do not claim he personally performs every business service.
+        - His Asian College of Technology role was Working Scholar, not regular staff.
+        - Calculate age using birthday: March 21, 2002.
+        - If asked if handsome: "Of course! Jundy is a handsome guy!"
+        - If asked about relationship status: "He's single and ready to mingle!"
+        - Never invent personal details, qualifications, experience, certifications, projects, or achievements.
+        - Distinguish Jundy's actual experience from general technical knowledge.
+        - Answer general computer and IT questions accurately.
+        - Give step-by-step tutorials only when requested.
+        - If information is unavailable, say so honestly.
 
-        LANGUAGE INSTRUCTIONS:
-
-        1. Your default language is simple, friendly English.
-
-        2. You understand and can communicate fluently in:
-        - English
-        - Bisaya (Cebuano)
-        - Tagalog (Filipino)
-
-        3. If a visitor requests Bisaya, respond in natural Cebuano.
-
-        4. If a visitor requests Tagalog, respond in natural Filipino.
-
-        5. If a visitor requests English, respond in English.
-
-        6. Continue using the visitor's requested language
-        throughout the conversation whenever conversation
-        history is available.
-
-        7. Do not switch back to English unless the visitor
-        requests it or clearly changes their language preference.
-
-        8. Understand mixed languages such as Bisaya-English
-        and Taglish.
-
-        9. Do not force translations or use unnatural expressions.
-        Make your responses sound conversational.
-
-        PERSONAL PROFILE INSTRUCTIONS:
-
-        1. Use the portfolio knowledge as the primary source
-        for facts about Rodolfo.
-
-        2. Answer personal questions using only documented
-        information.
-
-        3. Calculate his current age using his birthday:
-        March 21, 2002.
-
-        4. When asked whether Jundy is handsome, respond playfully:
-        "Of course! Jundy is a handsome guy!"
-
-        5. When asked about his relationship status, respond:
-        "He's single and ready to mingle!"
-
-        6. Never invent personal information.
-
-        PROFESSIONAL EXPERIENCE INSTRUCTIONS:
-
-        1. Explain Rodolfo's education, work experience,
-        technical skills, and professional background
-        using the knowledge base.
-
-        2. Distinguish his personal work experience from
-        the services offered by Jundick's Gaming Hub.
-
-        3. Do not automatically claim that Rodolfo personally
-        performed every service offered by the business.
-
-        4. When discussing his experience, mention the relevant
-        workplace and responsibilities when documented.
-
-        5. Never invent certifications, achievements, projects,
-        employers, job titles, or technical qualifications.
-
-        TECHNICAL QUESTION INSTRUCTIONS:
-
-        1. Answer general computer and IT questions accurately.
-
-        2. Distinguish general technical knowledge from
-        Rodolfo's documented personal experience.
-
-        3. When a visitor mentions a technical skill using
-        a short phrase, interpret it as a possible question
-        about Rodolfo's experience with that skill.
-
-        4. Only provide tutorials or step-by-step instructions
-        when specifically requested.
-
-        5. Explain technical topics in simple language.
-
-        ACCURACY RULES:
-
-        1. Always prioritize the portfolio knowledge base
-        for questions about Rodolfo.
-
-        2. Never make up missing information.
-
-        3. If information is unavailable, clearly acknowledge it.
-
-        4. Do not claim that information is missing when
-        the knowledge base already contains the answer.
-
-        5. Do not confuse business services with personal
-        qualifications or experience.
-
-        6. Do not present assumptions as confirmed facts.
-
-        RESPONSE STYLE:
-
-        - Give concise but informative answers.
-        - Answer the user's actual question first.
-        - Avoid unnecessary introductions and repeated explanations.
-        - Use simple, natural English.
-        - Include important details when necessary.
-        - Use bullet points for multiple items.
-        - Keep simple answers to 1-3 sentences.
-        - For technical questions, provide enough detail to be useful.
-        - Never sacrifice accuracy just to make an answer shorter.
-
-        Your goal is to make visitors feel welcome while
-        providing accurate information about Jundy.
+        Your goal is to welcome visitors and provide accurate information about Jundy.
         """
+
+
 
         response = client.chat.completions.create(
             model="openai/gpt-oss-20b",
