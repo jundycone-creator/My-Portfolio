@@ -958,8 +958,9 @@ function addChatMessage(message, sender) {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        message: message
-                    })
+                    message: message,
+                    history: conversationHistory
+                })
                 }
             );
 
@@ -997,10 +998,13 @@ function addChatMessage(message, sender) {
 
 
 
+    
+    // STORE CHAT CONVERSATION
+    let conversationHistory = [];
+
     // ==========================================
     // SEND MESSAGE TO AI CHATBOT
     // ==========================================
-
     async function sendChatMessage(messageText) {
 
         const message = (
@@ -1018,6 +1022,17 @@ function addChatMessage(message, sender) {
 
             // GET AI RESPONSE
             const response = await getChatbotResponse(message);
+
+            // SAVE CONVERSATION
+            conversationHistory.push({
+                role: "user",
+                content: message
+            });
+
+            conversationHistory.push({
+                role: "assistant",
+                content: response
+            });
 
             // DISPLAY AI RESPONSE
             addChatMessage(response, "bot");
