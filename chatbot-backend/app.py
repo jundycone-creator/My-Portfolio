@@ -1,10 +1,13 @@
 
 import os
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 from groq import Groq
+
 
 # Load API key from .env
 load_dotenv()
@@ -46,6 +49,7 @@ def home():
 
 @app.route("/chat", methods=["POST"])
 def chat():
+    print("========== NEW CHAT FUNCTION RUNNING ==========")
 
     try:
         print("CONTENT TYPE:", request.content_type)
@@ -56,15 +60,16 @@ def chat():
         print("PARSED DATA:", data)
 
         user_message = data.get("message", "").strip()
+        
         conversation_history = data.get("history", [])
 
         if not isinstance(conversation_history, list):
             conversation_history = []
 
-        # Validate conversation messages
+        # Keep only the latest 6 messages
         valid_history = []
 
-        for item in conversation_history[-20:]:
+        for item in conversation_history[-6:]:
 
             if not isinstance(item, dict):
                 continue
@@ -78,24 +83,101 @@ def chat():
             if not isinstance(content, str) or not content.strip():
                 continue
 
+            # Limit each historical message to 1,000 characters
             valid_history.append({
                 "role": role,
-                "content": content.strip()
+                "content": content.strip()[:1000]
             })
 
         conversation_history = valid_history
 
-        if not isinstance(conversation_history, list):
-            conversation_history = []
-
-        # Keep only the latest 20 conversation messages
-        conversation_history = conversation_history[-20:]
-
         if not user_message:
             return jsonify({"error": "Message is empty"}), 400
 
+
         # LOAD PORTFOLIO KNOWLEDGE
         knowledge = load_knowledge()
+
+        # CURRENT PHILIPPINE DATE AND TIME
+        philippine_time = datetime.now(ZoneInfo("Asia/Manila"))
+
+        current_time_context = philippine_time.strftime(
+            "%A, %B %d, %Y | %I:%M:%S %p"
+        )
+
+        current_hour = philippine_time.hour
+        current_day = philippine_time.weekday()
+
+        # JUNDYTECH SOLUTIONS BUSINESS HOURS
+        is_business_day = current_day < 6
+
+        is_business_open = (
+            is_business_day and
+            9 <= current_hour < 20
+        )
+
+        business_status = "OPEN" if is_business_open else "CLOSED"
+
+        time_information = f"""
+        CURRENT DATE AND TIME:
+        {current_time_context}
+
+        Timezone: Asia/Manila (Philippine Time, UTC+8).
+
+        JUNDYTECH SOLUTIONS BUSINESS HOURS:
+        Monday to Saturday: 9:00 AM – 8:00 PM.
+        Sunday: Closed.
+
+        CURRENT BUSINESS STATUS: {business_status}
+
+        TIME AWARENESS RULES:
+        - Always use the current Philippine date and time.
+        - Use CURRENT BUSINESS STATUS when asked whether the shop is open.
+        - Understand today, tomorrow, yesterday, and other relative dates.
+        - Do not confuse shop hours with Rodolfo's personal availability.
+        - Never invent the current time or personal availability.
+        """
+
+                
+        # DIRECT RESPONSE FOR CURRENT DATE AND TIME
+        normalized_message = user_message.lower().strip()
+
+        time_question_patterns = [
+            "what is the exact current date and time",
+            "current time",
+            "what time is it",
+            "what is the time",
+            "what's the time",
+            "exact current date and time",
+            "current date",
+            "what is today's date",
+            "what date is it",
+            "what day is it",
+            "unsa oras karon",
+            "unsay oras karon",
+            "unsa petsa karon",
+            "anong oras na",
+            "anong petsa ngayon"
+        ]
+        print("DEBUG NORMALIZED MESSAGE:", normalized_message)
+
+        if any(pattern in normalized_message for pattern in time_question_patterns):
+
+            reply = (
+                f"The current date and time in the Philippines is "
+                f"{current_time_context} "
+                f"(Asia/Manila, UTC+8)."
+            )
+
+            print("JUNDY AI DIRECT TIME RESPONSE:", reply)
+
+            return jsonify({"reply": reply})
+
+        print("JUNDY AI LIVE TIME:", current_time_context)
+        print("DEBUG: TIME CHECK REACHED")
+        print("DEBUG: USER MESSAGE:", user_message)
+        print("JUNDY AI BUSINESS STATUS:", business_status)
+
 
         print("\n========== KNOWLEDGE BASE CHECK ==========")
         print("FILE PATH:", KNOWLEDGE_FILE)
@@ -117,8 +199,29 @@ def chat():
         - Be playful and humorous when appropriate.
         - Remain professional when discussing career-related topics.
 
+        RESPONSE RULES:
+        - Be concise but informative.
+        - Answer the question directly.
+        - Use simple, natural English.
+        - Keep simple answers to 1–3 sentences.
+        - Include necessary details for technical questions.
+        - Avoid repeating information.
+        - Use bullet points when explaining multiple items.
+        - Never sacrifice accuracy for brevity.
+
         PORTFOLIO KNOWLEDGE:
         {knowledge}
+
+        LIVE TIME AND BUSINESS AVAILABILITY:
+        {time_information}
+
+        TIME AWARENESS INSTRUCTIONS:
+        - You have access to the live Philippine date and time above.
+        - Never claim that you are not connected to a live clock.
+        - When asked for the current date or time, use the supplied timestamp.
+        - Never guess or invent the current date and time.
+        - Use the supplied business status when asked if Jundytech Solutions is open.
+        - Do not confuse shop operating hours with Rodolfo's personal availability.
 
         LANGUAGE INSTRUCTIONS:
 
@@ -220,12 +323,15 @@ def chat():
 
         RESPONSE STYLE:
 
-        - Answer the visitor's actual question first.
-        - Keep answers concise but informative.
-        - Avoid unnecessary introductions.
-        - Use bullet points when they improve readability.
-        - Be friendly without sacrificing accuracy.
-        - Maintain the visitor's requested language.
+        - Give concise but informative answers.
+        - Answer the user's actual question first.
+        - Avoid unnecessary introductions and repeated explanations.
+        - Use simple, natural English.
+        - Include important details when necessary.
+        - Use bullet points for multiple items.
+        - Keep simple answers to 1-3 sentences.
+        - For technical questions, provide enough detail to be useful.
+        - Never sacrifice accuracy just to make an answer shorter.
 
         Your goal is to make visitors feel welcome while
         providing accurate information about Jundy.
@@ -239,22 +345,25 @@ def chat():
                     "role": "system",
                     "content": system_prompt
                 },
-                *conversation_history,
+                *conversation_history[-6:],
                 {
                     "role": "user",
                     "content": user_message
                 }
             ],
 
-            temperature=0.4,
-            max_completion_tokens=700
+            temperature=0.3,
+            max_completion_tokens=400
         )
+
 
         reply = response.choices[0].message.content
 
         return jsonify({
             "reply": reply
         })
+
+    
 
     except Exception as e:
 
