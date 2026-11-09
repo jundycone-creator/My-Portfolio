@@ -951,7 +951,7 @@ function addChatMessage(message, sender) {
         try {
             // CONNECT TO JUNDY ASSISTANT BACKEND
             const response = await fetch(
-                "https://hero-picked-symbols-wed.trycloudflare.com/chat",
+                "https://jundy-assistant-api.onrender.com/chat",
                 {
                     method: "POST",
                     headers: {
