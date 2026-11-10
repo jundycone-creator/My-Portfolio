@@ -15,6 +15,10 @@ import smtplib
 import secrets
 from email.message import EmailMessage
 import json
+import base64
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build
+from google.auth.transport.requests import Request as GoogleAuthRequest
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
@@ -719,6 +723,90 @@ Rodolfo Conejos
         raise RuntimeError(f"Resend API error: {error_details}") from error
 
 
+def send_resume_pdf_via_gmail(resume_request):
+
+    BASE_DIR = Path(__file__).resolve().parent
+
+    token_path = Path(
+        os.getenv(
+            "GMAIL_TOKEN_FILE",
+            str(BASE_DIR / "gmail_token.json")
+        )
+    )
+
+    resume_path = (
+        BASE_DIR
+        / "private_files"
+        / "Rodolfo_Conejos_Resume.pdf"
+    )
+
+    if not token_path.exists():
+        raise FileNotFoundError("Gmail token file not found.")
+
+    if not resume_path.exists():
+        raise FileNotFoundError("Private resume PDF not found.")
+
+    SCOPES = [
+        "https://www.googleapis.com/auth/gmail.send"
+    ]
+
+    credentials = Credentials.from_authorized_user_file(
+        str(token_path),
+        SCOPES
+    )
+
+    if credentials.expired and credentials.refresh_token:
+        credentials.refresh(GoogleAuthRequest())
+
+    if not credentials.valid:
+        raise RuntimeError("Gmail authorization is invalid or expired.")
+
+    service = build(
+        "gmail",
+        "v1",
+        credentials=credentials
+    )
+
+    message = EmailMessage()
+
+    message["To"] = resume_request.email
+    message["Subject"] = "Your Requested Resume - Rodolfo Conejos"
+
+    message.set_content(f"""
+Hello {resume_request.full_name},
+
+Your resume request has been approved.
+
+Please find my resume PDF attached to this email.
+
+Thank you for your interest.
+
+Regards,
+Rodolfo Conejos
+Jundytech Solutions
+""")
+
+    with open(resume_path, "rb") as pdf_file:
+        pdf_data = pdf_file.read()
+
+    message.add_attachment(
+        pdf_data,
+        maintype="application",
+        subtype="pdf",
+        filename="Rodolfo_Conejos_Resume.pdf"
+    )
+
+    encoded_message = base64.urlsafe_b64encode(
+        message.as_bytes()
+    ).decode("utf-8")
+
+    result = service.users().messages().send(
+        userId="me",
+        body={"raw": encoded_message}
+    ).execute()
+
+    return result.get("id")
+
 
 # ADMIN: APPROVE RESUME REQUEST
 @app.route("/admin/resume-requests/<int:request_id>/approve", methods=["POST"])
@@ -754,24 +842,64 @@ def approve_resume_request(request_id):
 
     db.session.commit()
 
-    email_sent = False
-
-    try:
-        send_resume_approval_email(resume_request)
-        email_sent = True
-    except Exception as e:
-        print("Resume approval email failed:", e)
-
     return jsonify({
         "success": True,
         "message": "Resume request approved.",
-        "email_sent": email_sent,
         "download_url": (
             "https://jundy-assistant-api.onrender.com/resume/download/"
             + resume_request.download_token
         ),
         "expires_at": resume_request.token_expiration.isoformat()
     }), 200
+
+
+# ADMIN: SEND RESUME PDF TO APPROVED VISITOR
+@app.route(
+    "/admin/resume-requests/<int:request_id>/send",
+    methods=["POST"]
+)
+@admin_required
+def send_approved_resume(request_id):
+
+    resume_request = db.session.get(
+        ResumeDownloadRequest,
+        request_id
+    )
+
+    if not resume_request:
+        return jsonify({
+            "success": False,
+            "message": "Resume request not found."
+        }), 404
+
+    if resume_request.status != "approved":
+        return jsonify({
+            "success": False,
+            "message": "Only approved requests can receive the resume."
+        }), 400
+
+    try:
+        gmail_message_id = send_resume_pdf_via_gmail(
+            resume_request
+        )
+
+        print(
+            f"Resume PDF sent to {resume_request.email}. "
+            f"Gmail message ID: {gmail_message_id}"
+        )
+
+        return jsonify({
+            "success": True,
+            "message": f"Resume successfully sent to {resume_request.email}."
+        }), 200
+
+    except Exception as e:
+        print("Resume PDF sending failed:", e)
+
+        return jsonify({
+            "success": False,
+            "message": "Failed to send resume. Please check the backend logs."
+        }), 500
 
 
 # ADMIN: REJECT RESUME REQUEST

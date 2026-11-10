@@ -496,19 +496,28 @@
                     </td>
                     <td>
                         ${item.status === "pending"
+                        ? `
+                            <button
+                                class="success"
+                                data-action="approve-resume"
+                                data-id="${item.id}">
+                                Approve
+                            </button>
+
+                            <button
+                                class="danger"
+                                data-action="reject-resume"
+                                data-id="${item.id}">
+                                Reject
+                            </button>
+                        `
+                        : item.status === "approved"
                             ? `
                                 <button
                                     class="success"
-                                    data-action="approve-resume"
+                                    data-action="send-resume"
                                     data-id="${item.id}">
-                                    Approve
-                                </button>
-
-                                <button
-                                    class="danger"
-                                    data-action="reject-resume"
-                                    data-id="${item.id}">
-                                    Reject
+                                    Send Resume
                                 </button>
                             `
                             : "No action available"}
@@ -641,6 +650,32 @@
                     "Resume request rejected.";
 
                 await loadResumeRequests();
+                return;
+            }
+
+            if (button.dataset.action === "send-resume") {
+                const confirmed = confirm(
+                    "Send the resume PDF to " + button.closest("tr").cells[1].textContent + "?"
+                );
+
+                if (!confirmed) return;
+
+                try {
+                    const result = await apiRequest(
+                        `/admin/resume-requests/${visitorId}/send`,
+                        { method: "POST" }
+                    );
+
+                    document.getElementById("dashboardMessage").textContent =
+                        result.message || "Resume sent successfully.";
+
+                    await loadResumeRequests();
+
+                } catch (error) {
+                    document.getElementById("dashboardMessage").textContent =
+                        "Failed to send resume: " + error.message;
+                }
+
                 return;
             }
 
