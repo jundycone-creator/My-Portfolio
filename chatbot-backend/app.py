@@ -48,6 +48,15 @@ if database_url.startswith("postgresql://"):
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_pre_ping": True,
+    "pool_recycle": 300,
+    "pool_timeout": 30,
+    "connect_args": {
+        "sslmode": "require"
+    }
+}
+
 db = SQLAlchemy(app)
 DAILY_QUESTION_LIMIT = 10
 PHILIPPINE_TIMEZONE = ZoneInfo("Asia/Manila")
