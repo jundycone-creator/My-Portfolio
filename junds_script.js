@@ -809,6 +809,68 @@ document.addEventListener("DOMContentLoaded", function () {
 
     }
 
+    // REQUEST RESUME DOWNLOAD
+    const requestResumeDownload = document.getElementById("requestResumeDownload");
+
+    if (requestResumeDownload) {
+
+        requestResumeDownload.addEventListener("click", async function () {
+
+            const fullName = prompt("Please enter your full name:");
+            if (!fullName || !fullName.trim()) return;
+
+            const email = prompt("Please enter your email address:");
+            if (!email || !email.trim()) return;
+
+            const purpose = prompt("Why do you need a copy of my resume?");
+            if (!purpose || !purpose.trim()) return;
+
+            requestResumeDownload.disabled = true;
+            requestResumeDownload.textContent = "Submitting Request...";
+
+            try {
+
+                const response = await fetch(
+                    "https://jundy-assistant-api.onrender.com/resume/request",
+                    //"http://127.0.0.1:5000/resume/request",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            full_name: fullName.trim(),
+                            email: email.trim(),
+                            purpose: purpose.trim()
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || data.error || "Request failed.");
+                }
+
+                alert("Your resume download request has been submitted. Please wait for approval.");
+
+            } catch (error) {
+
+                console.error("Resume request error:", error);
+                alert("Unable to submit your request. Please try again.");
+
+            } finally {
+
+                requestResumeDownload.disabled = false;
+                requestResumeDownload.innerHTML =
+                    '<i class="fa-solid fa-download"></i> Request Download';
+
+            }
+
+        });
+
+    }
+
 
             // ===============================
         // RANDOM CHATBOT GREETINGS
@@ -1221,6 +1283,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
     }
+
 
     // CLOSE RESUME PREVIEW
     function closePreview() {

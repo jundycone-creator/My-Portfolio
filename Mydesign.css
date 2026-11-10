@@ -3479,26 +3479,36 @@ a {
     border-radius: 4px;
 }
 
-.resume-preview-footer {
-    padding: 18px;
-    text-align: center;
-    border-top: 1px solid #333;
+
+/* RESUME PREVIEW WATERMARK */
+.resume-preview-page {
+    position: relative;
+    width: 100%;
+    max-width: 750px;
 }
 
-#requestResumeDownload {
-    background: linear-gradient(135deg, #b00000, #ff2020);
-    color: white;
-    border: none;
-    border-radius: 7px;
-    padding: 12px 24px;
-    font-size: 15px;
-    cursor: pointer;
-    transition: 0.3s ease;
+.resume-preview-page img {
+    display: block;
+    width: 100%;
+    height: auto;
+    user-select: none;
+    -webkit-user-drag: none;
 }
 
-#requestResumeDownload:hover {
-    transform: scale(1.04);
-    box-shadow: 0 0 15px rgba(255, 0, 0, 0.4);
+.resume-preview-page::after {
+    content: "RODOLFO CONEJOS • PREVIEW ONLY";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-35deg);
+    color: rgba(255, 0, 0, 0.18);
+    font-size: clamp(22px, 4vw, 42px);
+    font-weight: 900;
+    letter-spacing: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 5;
+    user-select: none;
 }
 
 @media (max-width: 600px) {
@@ -3513,4 +3523,37 @@ a {
     .resume-preview-header {
         padding: 14px;
     }
+}
+
+/* RESUME PREVIEW DOWNLOAD BUTTON */
+.resume-preview-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background: #111;
+    border-top: 1px solid rgba(255, 0, 0, 0.25);
+}
+
+#requestResumeDownload {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 13px 28px;
+    background: linear-gradient(135deg, #b30000, #ff1a1a);
+    color: #fff;
+    border: 1px solid #ff3333;
+    border-radius: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+#requestResumeDownload:hover {
+    background: linear-gradient(135deg, #ff1a1a, #990000);
+    box-shadow: 0 0 18px rgba(255, 0, 0, 0.4);
+    transform: translateY(-2px);
 }
