@@ -580,7 +580,8 @@ No download has been approved yet.
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "User-Agent": "Jundytech-Solutions/1.0"
         },
         method="POST"
     )
@@ -703,7 +704,8 @@ Rodolfo Conejos
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "User-Agent": "Jundytech-Solutions/1.0"
         },
         method="POST"
     )
@@ -834,9 +836,10 @@ Rodolfo Conejos
             "https://api.resend.com/emails",
             data=json.dumps(payload).encode("utf-8"),
             headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
-            },
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "Jundytech-Solutions/1.0"
+        },
             method="POST"
         )
 
