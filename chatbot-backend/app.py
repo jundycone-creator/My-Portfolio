@@ -569,6 +569,32 @@ def request_resume_download():
         "message": "Resume request submitted successfully."
     }), 201
 
+# ADMIN: LOAD RESUME DOWNLOAD REQUESTS
+@app.route("/admin/resume-requests", methods=["GET"])
+@admin_required
+def get_resume_requests():
+
+    requests_list = ResumeDownloadRequest.query.order_by(
+        ResumeDownloadRequest.request_date.desc()
+    ).all()
+
+    return jsonify({
+        "success": True,
+        "requests": [
+            {
+                "id": item.id,
+                "full_name": item.full_name,
+                "email": item.email,
+                "purpose": item.purpose,
+                "status": item.status,
+                "request_date": (
+                    item.request_date.isoformat()
+                    if item.request_date else None
+                )
+            }
+            for item in requests_list
+        ]
+    }), 200
 
 @app.route("/resume/preview/<int:page_number>", methods=["GET"])
 def preview_resume_page(page_number):
