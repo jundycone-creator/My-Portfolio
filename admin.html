@@ -278,6 +278,32 @@
                 </table>
             </div>
 
+            <!-- RESUME DOWNLOAD REQUESTS -->
+            <div class="section-header">
+                <h2>Resume Download Requests</h2>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th>Purpose</th>
+                            <th>Status</th>
+                            <th>Request Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="resumeRequestTable">
+                        <tr>
+                            <td colspan="6">Loading resume requests...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
             <p id="dashboardMessage"></p>
         </div>
 
@@ -427,6 +453,61 @@
         }
     }
 
+    // LOAD RESUME DOWNLOAD REQUESTS
+    async function loadResumeRequests() {
+
+        const table = document.getElementById("resumeRequestTable");
+
+        if (!table) return;
+
+        table.innerHTML = `
+            <tr>
+                <td colspan="6">Loading resume requests...</td>
+            </tr>
+        `;
+
+        try {
+            const result = await apiRequest("/admin/resume-requests");
+
+            const requests = result.requests;
+
+            if (requests.length === 0) {
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="6">No resume requests yet.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            table.innerHTML = requests.map(item => `
+                <tr>
+                    <td>${escapeHTML(item.full_name)}</td>
+                    <td>${escapeHTML(item.email)}</td>
+                    <td>${escapeHTML(item.purpose)}</td>
+                    <td>${escapeHTML(item.status)}</td>
+                    <td>
+                        ${item.request_date
+                            ? new Date(item.request_date).toLocaleString()
+                            : "N/A"}
+                    </td>
+                    <td>
+                        ${item.status === "pending"
+                            ? "Awaiting approval"
+                            : "No action available"}
+                    </td>
+                </tr>
+            `).join("");
+
+        } catch (error) {
+            table.innerHTML = `
+                <tr>
+                    <td colspan="6">${escapeHTML(error.message)}</td>
+                </tr>
+            `;
+        }
+    }
+
     loginForm.addEventListener("submit", async function(event) {
         event.preventDefault();
 
@@ -516,6 +597,7 @@
             await apiRequest("/admin/visitors");
             showDashboard();
             await loadVisitors();
+            await loadResumeRequests();
         } catch (error) {
             showLogin();
         }

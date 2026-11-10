@@ -11,6 +11,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import insert
 from functools import wraps
 from werkzeug.security import check_password_hash
+import secrets
 
 
 # Load API key from .env
@@ -58,7 +59,7 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 }
 
 db = SQLAlchemy(app)
-DAILY_QUESTION_LIMIT = 10
+DAILY_QUESTION_LIMIT = 2
 PHILIPPINE_TIMEZONE = ZoneInfo("Asia/Manila")
 
 class VisitorUsage(db.Model):
@@ -74,6 +75,28 @@ class VisitorUsage(db.Model):
             name="uq_visitor_usage_date"
         ),
     )
+
+class ResumeDownloadRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    full_name = db.Column(db.String(150), nullable=False)
+    email = db.Column(db.String(150), nullable=False)
+    purpose = db.Column(db.Text, nullable=False)
+
+    status = db.Column(
+        db.String(20),
+        default="pending",
+        nullable=False
+    )
+
+    request_date = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(PHILIPPINE_TIMEZONE)
+    )
+
+    approval_date = db.Column(db.DateTime, nullable=True)
+
+    download_token = db.Column(db.String(128), nullable=True)
+    token_expiration = db.Column(db.DateTime, nullable=True)
 
 class VisitorAccess(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -516,6 +539,89 @@ def update_visitor_access():
         db.session.rollback()
         raise
 
+@app.route("/admin/resume-requests", methods=["GET"])
+@admin_required
+def admin_resume_requests():
+
+    requests_list = ResumeDownloadRequest.query.order_by(
+        ResumeDownloadRequest.request_date.desc()
+    ).all()
+
+    return jsonify({
+        "success": True,
+        "total_requests": len(requests_list),
+        "requests": [
+            {
+                "id": item.id,
+                "full_name": item.full_name,
+                "email": item.email,
+                "purpose": item.purpose,
+                "status": item.status,
+                "request_date": (
+                    item.request_date.isoformat()
+                    if item.request_date else None
+                ),
+                "approval_date": (
+                    item.approval_date.isoformat()
+                    if item.approval_date else None
+                )
+            }
+            for item in requests_list
+        ]
+    })
+
+@app.route("/resume/request", methods=["POST"])
+def submit_resume_request():
+
+    data = request.get_json(silent=True) or {}
+
+    full_name = data.get("full_name", "")
+    email = data.get("email", "")
+    purpose = data.get("purpose", "")
+
+    if not all(isinstance(value, str) for value in [
+        full_name, email, purpose
+    ]):
+        return jsonify({"error": "Invalid input."}), 400
+
+    full_name = full_name.strip()
+    email = email.strip()
+    purpose = purpose.strip()
+
+    if not full_name or not email or not purpose:
+        return jsonify({
+            "error": "Please complete all required fields."
+        }), 400
+
+    if len(full_name) > 150 or len(email) > 150 or len(purpose) > 2000:
+        return jsonify({
+            "error": "One or more fields exceed the allowed length."
+        }), 400
+
+    if "@" not in email or "." not in email.split("@")[-1]:
+        return jsonify({"error": "Invalid email address."}), 400
+
+    new_request = ResumeDownloadRequest(
+        full_name=full_name,
+        email=email,
+        purpose=purpose
+    )
+
+    try:
+        db.session.add(new_request)
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Your resume access request has been submitted successfully.",
+            "request_id": new_request.id
+        }), 201
+
+    except Exception:
+        db.session.rollback()
+        return jsonify({
+            "error": "Unable to submit your request. Please try again."
+        }), 500
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -605,7 +711,7 @@ def chat():
                     "limit": DAILY_QUESTION_LIMIT,
                     "used": DAILY_QUESTION_LIMIT,
                     "remaining": 0,
-                    "message": "You have reached your 20-question daily limit. Please come back tomorrow."
+                    "message": "Sorry for the limited access! JUNDY AI currently has limited daily usage because AI services come with a cost. If you would like to support this project, any GCash contribution would be greatly appreciated. Your support will help me afford an AI plan so everyone can enjoy unlimited access. Thank you! ❤️"
                 }), 429
 
         remaining_questions = DAILY_QUESTION_LIMIT - used_questions
