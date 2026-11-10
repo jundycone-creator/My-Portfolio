@@ -1,9 +1,9 @@
 
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from pathlib import Path
-from flask import Flask, request, jsonify, session, send_from_directory
+from flask import Flask, request, jsonify, session, send_from_directory, send_file
 from flask_cors import CORS
 from dotenv import load_dotenv
 from groq import Groq
@@ -11,7 +11,9 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import insert
 from functools import wraps
 from werkzeug.security import check_password_hash
+import smtplib
 import secrets
+from email.message import EmailMessage
 
 
 # Load API key from .env
@@ -59,7 +61,7 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 }
 
 db = SQLAlchemy(app)
-DAILY_QUESTION_LIMIT = 2
+DAILY_QUESTION_LIMIT = 20
 PHILIPPINE_TIMEZONE = ZoneInfo("Asia/Manila")
 
 class VisitorUsage(db.Model):
@@ -539,6 +541,44 @@ def update_visitor_access():
         db.session.rollback()
         raise
 
+def send_resume_request_notification(resume_request):
+
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    owner_email = os.getenv("OWNER_EMAIL")
+
+    if not smtp_user or not smtp_password or not owner_email:
+        raise ValueError("Email environment variables are missing.")
+
+    message = EmailMessage()
+    message["Subject"] = "New Resume Download Request"
+    message["From"] = smtp_user
+    message["To"] = owner_email
+
+    message.set_content(
+        f"""
+A new resume download request has been submitted.
+
+Request ID: {resume_request.id}
+Name: {resume_request.full_name}
+Email: {resume_request.email}
+Purpose: {resume_request.purpose}
+Status: Pending
+
+Please log in to your admin dashboard to review this request:
+
+https://jundycone-creator.github.io/My-Portfolio/admin.html
+
+No download has been approved yet.
+"""
+    )
+
+    with smtplib.SMTP("smtp.gmail.com", 587) as server:
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+        server.send_message(message)
+
+
 @app.route("/resume/request", methods=["POST"])
 def request_resume_download():
 
@@ -563,6 +603,11 @@ def request_resume_download():
 
     db.session.add(new_request)
     db.session.commit()
+
+    try:
+        send_resume_request_notification(new_request)
+    except Exception as e:
+        print("Resume notification email failed:", e)
 
     return jsonify({
         "success": True,
@@ -595,6 +640,185 @@ def get_resume_requests():
             for item in requests_list
         ]
     }), 200
+
+
+def send_resume_approval_email(resume_request):
+
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+
+    if not smtp_user or not smtp_password:
+        raise ValueError("Email environment variables are missing.")
+
+    api_base_url = os.getenv(
+            "PUBLIC_API_BASE_URL",
+            "https://jundy-assistant-api.onrender.com"
+        )
+
+    download_url = (
+            f"{api_base_url}/resume/download/"
+            f"{resume_request.download_token}"
+        )
+            
+
+    message = EmailMessage()
+    message["Subject"] = "Your Resume Download Request Was Approved"
+    message["From"] = smtp_user
+    message["To"] = resume_request.email
+
+    message.set_content(
+        f"""
+Hello {resume_request.full_name},
+
+Your request to download my resume has been approved.
+
+You can download the PDF using this secure link:
+
+{download_url}
+
+This link expires 24 hours after approval.
+
+Thank you for your interest.
+
+Regards,
+Rodolfo Conejos
+"""
+    )
+
+    with smtplib.SMTP("smtp.gmail.com", 587) as server:
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+        server.send_message(message)
+
+
+
+# ADMIN: APPROVE RESUME REQUEST
+@app.route("/admin/resume-requests/<int:request_id>/approve", methods=["POST"])
+@admin_required
+def approve_resume_request(request_id):
+
+    resume_request = db.session.get(
+        ResumeDownloadRequest,
+        request_id
+    )
+
+    if not resume_request:
+        return jsonify({
+            "success": False,
+            "message": "Resume request not found."
+        }), 404
+
+    if resume_request.status != "pending":
+        return jsonify({
+            "success": False,
+            "message": "This request has already been processed."
+        }), 400
+
+    now = datetime.now(PHILIPPINE_TIMEZONE).replace(tzinfo=None)
+
+    resume_request.status = "approved"
+    resume_request.approval_date = now
+    resume_request.download_token = secrets.token_urlsafe(48)
+    resume_request.token_expiration = (
+        now.replace(microsecond=0)
+        + timedelta(hours=24)
+    )
+
+    db.session.commit()
+
+    email_sent = False
+
+    try:
+        send_resume_approval_email(resume_request)
+        email_sent = True
+    except Exception as e:
+        print("Resume approval email failed:", e)
+
+    return jsonify({
+        "success": True,
+        "message": "Resume request approved.",
+        "email_sent": email_sent,
+        "download_url": (
+            "https://jundy-assistant-api.onrender.com/resume/download/"
+            + resume_request.download_token
+        ),
+        "expires_at": resume_request.token_expiration.isoformat()
+    }), 200
+
+
+# ADMIN: REJECT RESUME REQUEST
+@app.route("/admin/resume-requests/<int:request_id>/reject", methods=["POST"])
+@admin_required
+def reject_resume_request(request_id):
+
+    resume_request = db.session.get(
+        ResumeDownloadRequest,
+        request_id
+    )
+
+    if not resume_request:
+        return jsonify({
+            "success": False,
+            "message": "Resume request not found."
+        }), 404
+
+    if resume_request.status != "pending":
+        return jsonify({
+            "success": False,
+            "message": "This request has already been processed."
+        }), 400
+
+    resume_request.status = "rejected"
+    resume_request.download_token = None
+    resume_request.token_expiration = None
+
+    db.session.commit()
+
+    email_sent = False
+
+    try:
+        smtp_user = os.getenv("SMTP_USER")
+        smtp_password = os.getenv("SMTP_PASSWORD")
+
+        if not smtp_user or not smtp_password:
+            raise ValueError("Email environment variables are missing.")
+
+        message = EmailMessage()
+        message["Subject"] = "Resume Download Request Update"
+        message["From"] = smtp_user
+        message["To"] = resume_request.email
+
+        message.set_content(
+            f"""
+Hello {resume_request.full_name},
+
+Thank you for your interest in my resume.
+
+Unfortunately, your resume download request was not approved.
+
+Thank you for your understanding.
+
+Regards,
+Rodolfo Conejos
+"""
+        )
+
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            server.send_message(message)
+
+        email_sent = True
+
+    except Exception as e:
+        print("Resume rejection email failed:", e)
+
+    return jsonify({
+        "success": True,
+        "message": "Resume request rejected.",
+        "email_sent": email_sent
+    }), 200
+
 
 @app.route("/resume/preview/<int:page_number>", methods=["GET"])
 def preview_resume_page(page_number):
@@ -955,7 +1179,50 @@ def chat():
             "error": "Sorry, the AI assistant is temporarily unavailable."
         }), 500
 
+# SECURE RESUME DOWNLOAD
+@app.route("/resume/download/<token>", methods=["GET"])
+def download_resume(token):
 
+    resume_request = ResumeDownloadRequest.query.filter_by(
+        download_token=token,
+        status="approved"
+    ).first()
+
+    if not resume_request:
+        return jsonify({
+            "success": False,
+            "message": "Invalid download link."
+        }), 404
+
+    now = datetime.now(PHILIPPINE_TIMEZONE).replace(tzinfo=None)
+
+    if (
+        not resume_request.token_expiration
+        or now > resume_request.token_expiration
+    ):
+        return jsonify({
+            "success": False,
+            "message": "This download link has expired."
+        }), 410
+
+    resume_path = (
+        Path(__file__).resolve().parent
+        / "private_files"
+        / "Rodolfo_Conejos_Resume.pdf"
+    )
+
+    if not resume_path.is_file():
+        return jsonify({
+            "success": False,
+            "message": "Resume file not found."
+        }), 404
+
+    return send_file(
+        resume_path,
+        as_attachment=True,
+        download_name="Rodolfo_Conejos_Resume.pdf",
+        mimetype="application/pdf"
+    )
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=False)

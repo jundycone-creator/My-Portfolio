@@ -3491,9 +3491,12 @@ a {
     display: block;
     width: 100%;
     height: auto;
+    filter: blur(2px);
     user-select: none;
     -webkit-user-drag: none;
+    pointer-events: none;
 }
+
 
 .resume-preview-page::after {
     content: "RODOLFO CONEJOS • PREVIEW ONLY";

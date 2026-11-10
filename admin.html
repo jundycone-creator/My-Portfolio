@@ -313,6 +313,7 @@
 
 <script>
     const API_URL = "https://jundy-assistant-api.onrender.com";
+    //const API_URL = "http://127.0.0.1:5000";
 
     const loginPanel = document.getElementById("loginPanel");
     const dashboard = document.getElementById("dashboard");
@@ -470,6 +471,7 @@
             const result = await apiRequest("/admin/resume-requests");
 
             const requests = result.requests;
+            
 
             if (requests.length === 0) {
                 table.innerHTML = `
@@ -480,6 +482,7 @@
                 return;
             }
 
+            
             table.innerHTML = requests.map(item => `
                 <tr>
                     <td>${escapeHTML(item.full_name)}</td>
@@ -493,11 +496,26 @@
                     </td>
                     <td>
                         ${item.status === "pending"
-                            ? "Awaiting approval"
+                            ? `
+                                <button
+                                    class="success"
+                                    data-action="approve-resume"
+                                    data-id="${item.id}">
+                                    Approve
+                                </button>
+
+                                <button
+                                    class="danger"
+                                    data-action="reject-resume"
+                                    data-id="${item.id}">
+                                    Reject
+                                </button>
+                            `
                             : "No action available"}
                     </td>
                 </tr>
             `).join("");
+
 
         } catch (error) {
             table.innerHTML = `
@@ -533,7 +551,10 @@
         }
     });
 
-    document.getElementById("refreshButton").addEventListener("click", loadVisitors);
+    document.getElementById("refreshButton").addEventListener("click", async function() {
+        await loadVisitors();
+        await loadResumeRequests();
+    });
 
     document.getElementById("logoutButton").addEventListener("click", async function() {
         try {
@@ -584,12 +605,93 @@
                 });
             }
 
+
+            if (button.dataset.action === "approve-resume") {
+                const confirmed = confirm(
+                    "Are you sure you want to approve this resume request?"
+                );
+
+                if (!confirmed) return;
+
+                await apiRequest(
+                    `/admin/resume-requests/${visitorId}/approve`,
+                    { method: "POST" }
+                );
+
+                document.getElementById("dashboardMessage").textContent =
+                    "Resume request approved.";
+                
+                await loadResumeRequests();
+                return;
+            }
+
+            if (button.dataset.action === "reject-resume") {
+                const confirmed = confirm(
+                    "Are you sure you want to reject this resume request?"
+                );
+
+                if (!confirmed) return;
+
+                await apiRequest(
+                    `/admin/resume-requests/${visitorId}/reject`,
+                    { method: "POST" }
+                );
+
+                document.getElementById("dashboardMessage").textContent =
+                    "Resume request rejected.";
+
+                await loadResumeRequests();
+                return;
+            }
+
+
             await loadVisitors();
 
         } catch (error) {
             document.getElementById("dashboardMessage").textContent = error.message;
         }
     });
+
+
+    document.getElementById("resumeRequestTable").addEventListener("click", async function(event) {
+        const button = event.target.closest("button[data-action]");
+
+        if (!button) return;
+
+        const requestId = button.dataset.id;
+        const action = button.dataset.action;
+
+        try {
+            if (action === "approve-resume") {
+                if (!confirm("Approve this resume download request?")) return;
+
+                await apiRequest(
+                    `/admin/resume-requests/${requestId}/approve`,
+                    { method: "POST" }
+                );
+
+                alert("Resume request approved!");
+            }
+
+            else if (action === "reject-resume") {
+                if (!confirm("Reject this resume download request?")) return;
+
+                await apiRequest(
+                    `/admin/resume-requests/${requestId}/reject`,
+                    { method: "POST" }
+                );
+
+                alert("Resume request rejected!");
+            }
+
+            await loadResumeRequests();
+
+        } catch (error) {
+            document.getElementById("dashboardMessage").textContent =
+                error.message;
+        }
+    });
+
 
     // Check whether an admin session already exists.
     async function checkAdminSession() {

@@ -1066,8 +1066,8 @@ function addChatMessage(message, sender) {
         try {
             // CONNECT TO JUNDY ASSISTANT BACKEND
             const response = await fetch(
-                "https://jundy-assistant-api.onrender.com/chat",
-                //"http://127.0.0.1:5000/chat",
+                //"https://jundy-assistant-api.onrender.com/chat",
+                "http://127.0.0.1:5000/chat",
                 {
                     method: "POST",
                     headers: {
