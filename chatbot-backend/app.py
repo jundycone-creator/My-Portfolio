@@ -14,6 +14,9 @@ from werkzeug.security import check_password_hash
 import smtplib
 import secrets
 from email.message import EmailMessage
+import json
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 
 
 # Load API key from .env
@@ -541,22 +544,21 @@ def update_visitor_access():
         db.session.rollback()
         raise
 
+
 def send_resume_request_notification(resume_request):
 
-    smtp_user = os.getenv("SMTP_USER")
-    smtp_password = os.getenv("SMTP_PASSWORD")
+    api_key = os.getenv("RESEND_API_KEY")
+    from_email = os.getenv("RESEND_FROM_EMAIL")
     owner_email = os.getenv("OWNER_EMAIL")
 
-    if not smtp_user or not smtp_password or not owner_email:
-        raise ValueError("Email environment variables are missing.")
+    if not api_key or not from_email or not owner_email:
+        raise ValueError("Resend email environment variables are missing.")
 
-    message = EmailMessage()
-    message["Subject"] = "New Resume Download Request"
-    message["From"] = smtp_user
-    message["To"] = owner_email
-
-    message.set_content(
-        f"""
+    payload = {
+        "from": from_email,
+        "to": [owner_email],
+        "subject": "New Resume Download Request",
+        "text": f"""
 A new resume download request has been submitted.
 
 Request ID: {resume_request.id}
@@ -571,12 +573,26 @@ https://jundycone-creator.github.io/My-Portfolio/admin.html
 
 No download has been approved yet.
 """
+    }
+
+    req = Request(
+        "https://api.resend.com/emails",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        },
+        method="POST"
     )
 
-    with smtplib.SMTP("smtp.gmail.com", 587) as server:
-        server.starttls()
-        server.login(smtp_user, smtp_password)
-        server.send_message(message)
+    try:
+        with urlopen(req, timeout=15) as response:
+            response.read()
+
+    except HTTPError as error:
+        error_details = error.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Resend API error: {error_details}") from error
+
 
 
 @app.route("/resume/request", methods=["POST"])
@@ -644,30 +660,27 @@ def get_resume_requests():
 
 def send_resume_approval_email(resume_request):
 
-    smtp_user = os.getenv("SMTP_USER")
-    smtp_password = os.getenv("SMTP_PASSWORD")
+    api_key = os.getenv("RESEND_API_KEY")
+    from_email = os.getenv("RESEND_FROM_EMAIL")
 
-    if not smtp_user or not smtp_password:
-        raise ValueError("Email environment variables are missing.")
+    if not api_key or not from_email:
+        raise ValueError("Resend email environment variables are missing.")
 
     api_base_url = os.getenv(
-            "PUBLIC_API_BASE_URL",
-            "https://jundy-assistant-api.onrender.com"
-        )
+        "PUBLIC_API_BASE_URL",
+        "https://jundy-assistant-api.onrender.com"
+    )
 
     download_url = (
-            f"{api_base_url}/resume/download/"
-            f"{resume_request.download_token}"
-        )
-            
+        f"{api_base_url}/resume/download/"
+        f"{resume_request.download_token}"
+    )
 
-    message = EmailMessage()
-    message["Subject"] = "Your Resume Download Request Was Approved"
-    message["From"] = smtp_user
-    message["To"] = resume_request.email
-
-    message.set_content(
-        f"""
+    payload = {
+        "from": from_email,
+        "to": [resume_request.email],
+        "subject": "Your Resume Download Request Was Approved",
+        "text": f"""
 Hello {resume_request.full_name},
 
 Your request to download my resume has been approved.
@@ -683,12 +696,25 @@ Thank you for your interest.
 Regards,
 Rodolfo Conejos
 """
+    }
+
+    req = Request(
+        "https://api.resend.com/emails",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        },
+        method="POST"
     )
 
-    with smtplib.SMTP("smtp.gmail.com", 587) as server:
-        server.starttls()
-        server.login(smtp_user, smtp_password)
-        server.send_message(message)
+    try:
+        with urlopen(req, timeout=15) as response:
+            response.read()
+
+    except HTTPError as error:
+        error_details = error.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Resend API error: {error_details}") from error
 
 
 
@@ -776,20 +802,21 @@ def reject_resume_request(request_id):
 
     email_sent = False
 
+    
+    email_sent = False
+
     try:
-        smtp_user = os.getenv("SMTP_USER")
-        smtp_password = os.getenv("SMTP_PASSWORD")
+        api_key = os.getenv("RESEND_API_KEY")
+        from_email = os.getenv("RESEND_FROM_EMAIL")
 
-        if not smtp_user or not smtp_password:
-            raise ValueError("Email environment variables are missing.")
+        if not api_key or not from_email:
+            raise ValueError("Resend email environment variables are missing.")
 
-        message = EmailMessage()
-        message["Subject"] = "Resume Download Request Update"
-        message["From"] = smtp_user
-        message["To"] = resume_request.email
-
-        message.set_content(
-            f"""
+        payload = {
+            "from": from_email,
+            "to": [resume_request.email],
+            "subject": "Resume Download Request Update",
+            "text": f"""
 Hello {resume_request.full_name},
 
 Thank you for your interest in my resume.
@@ -801,17 +828,26 @@ Thank you for your understanding.
 Regards,
 Rodolfo Conejos
 """
+        }
+
+        req = Request(
+            "https://api.resend.com/emails",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            },
+            method="POST"
         )
 
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
-            server.login(smtp_user, smtp_password)
-            server.send_message(message)
+        with urlopen(req, timeout=15) as response:
+            response.read()
 
         email_sent = True
 
     except Exception as e:
         print("Resume rejection email failed:", e)
+
 
     return jsonify({
         "success": True,
