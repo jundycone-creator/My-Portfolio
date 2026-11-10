@@ -539,38 +539,36 @@ def update_visitor_access():
         db.session.rollback()
         raise
 
-@app.route("/admin/resume-requests", methods=["GET"])
-@admin_required
-def admin_resume_requests():
+@app.route("/resume/request", methods=["POST"])
+def request_resume_download():
 
-    requests_list = ResumeDownloadRequest.query.order_by(
-        ResumeDownloadRequest.request_date.desc()
-    ).all()
+    data = request.get_json()
+
+    full_name = data.get("full_name", "").strip()
+    email = data.get("email", "").strip()
+    purpose = data.get("purpose", "").strip()
+
+    if not full_name or not email or not purpose:
+        return jsonify({
+            "success": False,
+            "message": "All fields are required."
+        }), 400
+
+    new_request = ResumeDownloadRequest(
+        full_name=full_name,
+        email=email,
+        purpose=purpose,
+        status="pending"
+    )
+
+    db.session.add(new_request)
+    db.session.commit()
 
     return jsonify({
         "success": True,
-        "total_requests": len(requests_list),
-        "requests": [
-            {
-                "id": item.id,
-                "full_name": item.full_name,
-                "email": item.email,
-                "purpose": item.purpose,
-                "status": item.status,
-                "request_date": (
-                    item.request_date.isoformat()
-                    if item.request_date else None
-                ),
-                "approval_date": (
-                    item.approval_date.isoformat()
-                    if item.approval_date else None
-                )
-            }
-            for item in requests_list
-        ]
-    })
+        "message": "Resume request submitted successfully."
+    }), 201
 
-@app.route("/resume/request", methods=["POST"])
 
 @app.route("/resume/preview/<int:page_number>", methods=["GET"])
 def preview_resume_page(page_number):
