@@ -3,17 +3,186 @@ import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from pathlib import Path
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from dotenv import load_dotenv
 from groq import Groq
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.dialects.postgresql import insert
+from functools import wraps
+from werkzeug.security import check_password_hash
 
 
 # Load API key from .env
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = os.getenv(
+    "SESSION_COOKIE_SAMESITE", "Lax"
+)
+app.config["SESSION_COOKIE_SECURE"] = (
+    os.getenv("SESSION_COOKIE_SECURE", "False").lower() == "true"
+)
+
+if not app.config["SECRET_KEY"]:
+    raise RuntimeError("SECRET_KEY is not configured.")
+
+# Database configuration
+database_url = os.getenv("DATABASE_URL")
+
+if not database_url:
+    raise RuntimeError("DATABASE_URL is not configured.")
+
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+if database_url.startswith("postgresql://"):
+    database_url = database_url.replace(
+        "postgresql://",
+        "postgresql+psycopg2://",
+        1
+    )
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db = SQLAlchemy(app)
+DAILY_QUESTION_LIMIT = 10
+PHILIPPINE_TIMEZONE = ZoneInfo("Asia/Manila")
+
+class VisitorUsage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    visitor_id = db.Column(db.String(64), nullable=False)
+    usage_date = db.Column(db.Date, nullable=False)
+    question_count = db.Column(db.Integer, default=0, nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "visitor_id",
+            "usage_date",
+            name="uq_visitor_usage_date"
+        ),
+    )
+
+class VisitorAccess(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    visitor_id = db.Column(db.String(64), unique=True, nullable=False)
+    device_name = db.Column(db.String(100), nullable=True)
+    device_label = db.Column(db.String(100), nullable=True)
+    browser_name = db.Column(db.String(100), nullable=True)
+    access_type = db.Column(
+        db.String(20),
+        default="limited",
+        nullable=False
+    )
+    is_blocked = db.Column(db.Boolean, default=False, nullable=False)
+    first_seen = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(PHILIPPINE_TIMEZONE)
+    )
+    last_seen = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(PHILIPPINE_TIMEZONE),
+        onupdate=lambda: datetime.now(PHILIPPINE_TIMEZONE)
+    )
+
+
+def record_visitor_question(visitor_id, device_name=None, browser_name=None):
+    today = datetime.now(PHILIPPINE_TIMEZONE).date()
+    now = datetime.now(PHILIPPINE_TIMEZONE)
+    device_name = (device_name or "Unknown Device")[:100]
+    browser_name = (browser_name or "Unknown Browser")[:100]
+
+    try:
+        # Register the visitor if they do not exist yet.
+        statement = insert(VisitorAccess).values(
+            visitor_id=visitor_id,
+            device_name=device_name,
+            device_label="Unnamed Device",
+            browser_name=browser_name,
+            access_type="limited",
+            is_blocked=False
+        )
+
+        statement = statement.on_conflict_do_nothing(
+            index_elements=["visitor_id"]
+        )
+
+        db.session.execute(statement)
+
+        # Retrieve and lock the visitor's access record.
+        visitor = VisitorAccess.query.filter_by(
+            visitor_id=visitor_id
+        ).with_for_update().first()
+
+        visitor.last_seen = now
+
+        if device_name:
+            visitor.device_name = device_name
+
+        if browser_name:
+            visitor.browser_name = browser_name
+
+        # Check whether the visitor is blocked.
+        if visitor.is_blocked:
+            db.session.commit()
+
+            return {
+                "blocked": True,
+                "access_type": visitor.access_type,
+                "used": 0
+            }
+
+        # Count questions for both limited and unlimited visitors.
+        usage_statement = insert(VisitorUsage).values(
+            visitor_id=visitor_id,
+            usage_date=today,
+            question_count=1
+        )
+
+        usage_statement = usage_statement.on_conflict_do_update(
+            index_elements=["visitor_id", "usage_date"],
+            set_={
+                "question_count": VisitorUsage.question_count + 1
+            },
+            where=(
+                VisitorUsage.question_count < DAILY_QUESTION_LIMIT
+                if visitor.access_type == "limited"
+                else True
+            )
+        ).returning(VisitorUsage.question_count)
+
+        used_questions = db.session.execute(
+            usage_statement
+        ).scalar_one_or_none()
+
+        db.session.commit()
+
+        return {
+            "blocked": False,
+            "access_type": visitor.access_type,
+            "used": used_questions
+        }
+
+    except Exception:
+        db.session.rollback()
+        raise
+
+CORS(
+    app,
+    resources={
+        r"/*": {
+            "origins": [
+                "http://127.0.0.1:5500",
+                "https://jundycone-creator.github.io"
+            ]
+        }
+    },
+    supports_credentials=True
+)
 
 api_key = os.getenv("GROQ_API_KEY")
 
@@ -138,6 +307,206 @@ def home():
         "status": "Jundy Assistant Groq backend is running!"
     })
 
+def admin_required(view_function):
+    @wraps(view_function)
+    def decorated_function(*args, **kwargs):
+
+        if not session.get("is_admin"):
+            return jsonify({
+                "error": "Unauthorized",
+                "message": "Admin login required."
+            }), 401
+
+        return view_function(*args, **kwargs)
+
+    return decorated_function
+
+def admin_origin_required(view_function):
+    @wraps(view_function)
+    def decorated_function(*args, **kwargs):
+        allowed_origins = {
+            "http://127.0.0.1:5500",
+            "https://jundycone-creator.github.io"
+        }
+
+        origin = request.headers.get("Origin")
+
+        if origin not in allowed_origins:
+            return jsonify({
+                "error": "Forbidden",
+                "message": "Invalid request origin."
+            }), 403
+
+        return view_function(*args, **kwargs)
+
+    return decorated_function
+
+@app.route("/admin/login", methods=["POST"])
+@admin_origin_required
+def admin_login():
+    data = request.get_json(silent=True) or {}
+
+    username = data.get("username", "")
+    password = data.get("password", "")
+
+    admin_username = os.getenv("ADMIN_USERNAME", "")
+    admin_password_hash = os.getenv("ADMIN_PASSWORD_HASH", "")
+
+    if not isinstance(username, str) or not isinstance(password, str):
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    if not admin_username or not admin_password_hash:
+        return jsonify({"error": "Admin credentials are not configured"}), 500
+
+    if (
+        username != admin_username
+        or not check_password_hash(admin_password_hash, password)
+    ):
+        return jsonify({"error": "Incorrect username or password"}), 401
+
+    session.clear()
+    session["is_admin"] = True
+
+    return jsonify({
+        "success": True,
+        "message": "Admin login successful."
+    })
+
+
+@app.route("/admin/logout", methods=["POST"])
+@admin_required
+def admin_logout():
+    session.clear()
+
+    return jsonify({
+        "success": True,
+        "message": "Admin logged out successfully."
+    })
+
+
+@app.route("/admin/visitors", methods=["GET"])
+@admin_required
+def admin_visitors():
+
+    today = datetime.now(PHILIPPINE_TIMEZONE).date()
+
+    visitors = VisitorAccess.query.order_by(
+        VisitorAccess.last_seen.desc()
+    ).all()
+
+    visitor_list = []
+
+    for visitor in visitors:
+
+        usage = VisitorUsage.query.filter_by(
+            visitor_id=visitor.visitor_id,
+            usage_date=today
+        ).first()
+
+        visitor_list.append({
+            "visitor_id": visitor.visitor_id,
+            "device_label": visitor.device_label,
+            "device_name": visitor.device_name,
+            "browser_name": visitor.browser_name,
+            "access_type": visitor.access_type,
+            "is_blocked": visitor.is_blocked,
+            "questions_today": usage.question_count if usage else 0,
+            "first_seen": visitor.first_seen.isoformat() if visitor.first_seen else None,
+            "last_seen": visitor.last_seen.isoformat() if visitor.last_seen else None
+        })
+
+    return jsonify({
+        "success": True,
+        "total_visitors": len(visitor_list),
+        "visitors": visitor_list
+    })
+
+
+@app.route("/admin/visitors/rename", methods=["POST"])
+@admin_required
+def rename_visitor():
+
+    data = request.get_json(silent=True) or {}
+
+    visitor_id = data.get("visitor_id")
+    device_label = data.get("device_label")
+
+    if not isinstance(visitor_id, str) or not isinstance(device_label, str):
+        return jsonify({"error": "Invalid input"}), 400
+
+    device_label = device_label.strip()
+
+    if not device_label or len(device_label) > 100:
+        return jsonify({
+            "error": "Device name must contain 1 to 100 characters."
+        }), 400
+
+    visitor = VisitorAccess.query.filter_by(
+        visitor_id=visitor_id
+    ).first()
+
+    if not visitor:
+        return jsonify({"error": "Visitor not found"}), 404
+
+    visitor.device_label = device_label
+
+    try:
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Device name updated successfully.",
+            "device_label": visitor.device_label
+        })
+
+    except Exception:
+        db.session.rollback()
+        raise
+
+
+@app.route("/admin/visitors/access", methods=["POST"])
+@admin_required
+def update_visitor_access():
+
+    data = request.get_json(silent=True) or {}
+
+    visitor_id = data.get("visitor_id")
+    access_type = data.get("access_type")
+    is_blocked = data.get("is_blocked")
+
+    if not isinstance(visitor_id, str):
+        return jsonify({"error": "Invalid visitor ID"}), 400
+
+    if access_type not in ["limited", "unlimited"]:
+        return jsonify({"error": "Invalid access type"}), 400
+
+    if type(is_blocked) is not bool:
+        return jsonify({"error": "Invalid blocked status"}), 400
+
+    visitor = VisitorAccess.query.filter_by(
+        visitor_id=visitor_id
+    ).first()
+
+    if not visitor:
+        return jsonify({"error": "Visitor not found"}), 404
+
+    visitor.access_type = access_type
+    visitor.is_blocked = is_blocked
+
+    try:
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Visitor access updated successfully.",
+            "visitor_id": visitor.visitor_id,
+            "access_type": visitor.access_type,
+            "is_blocked": visitor.is_blocked
+        })
+
+    except Exception:
+        db.session.rollback()
+        raise
 
 
 @app.route("/chat", methods=["POST"])
@@ -150,7 +519,16 @@ def chat():
 
         data = request.get_json(silent=True) or {}
 
+        print("\n========== NEW CHAT MESSAGE ==========")
+        print("VISITOR ID:", data.get("visitor_id"))
+        print("USER MESSAGE:", data.get("message"))
+
         print("PARSED DATA:", data)
+
+        visitor_id = data.get("visitor_id", "")
+
+        if not isinstance(visitor_id, str) or not (16 <= len(visitor_id) <= 64):
+            return jsonify({"error": "Invalid visitor ID"}), 400
 
         user_message = data.get("message", "").strip()
         
@@ -186,7 +564,43 @@ def chat():
 
         if not user_message:
             return jsonify({"error": "Message is empty"}), 400
+        # CHECK DAILY VISITOR QUESTION LIMIT
+        # CHECK VISITOR ACCESS
+        device_name = data.get("device_name", "Unknown Device")
+        browser_name = data.get("browser_name", "Unknown Browser")
 
+        visitor_result = record_visitor_question(
+            visitor_id,
+            device_name,
+            browser_name
+        )
+
+        # BLOCKED VISITOR
+        if visitor_result["blocked"]:
+            return jsonify({
+                "error": "visitor_blocked",
+                "message": "Access to JUNDY AI has been restricted."
+            }), 403
+
+        used_questions = visitor_result["used"]
+        access_type = visitor_result["access_type"]
+
+        # UNLIMITED ACCESS
+        if access_type == "unlimited":
+            remaining_questions = None
+
+        # LIMITED ACCESS
+        else:
+            if used_questions is None:
+                return jsonify({
+                    "error": "daily_limit_reached",
+                    "limit": DAILY_QUESTION_LIMIT,
+                    "used": DAILY_QUESTION_LIMIT,
+                    "remaining": 0,
+                    "message": "You have reached your 20-question daily limit. Please come back tomorrow."
+                }), 429
+
+        remaining_questions = DAILY_QUESTION_LIMIT - used_questions
         # LOAD ONLY RELEVANT PORTFOLIO KNOWLEDGE
         knowledge = get_relevant_knowledge(user_message)
 
@@ -284,7 +698,12 @@ def chat():
 
             print("JUNDY AI DIRECT TIME RESPONSE:", reply)
 
-            return jsonify({"reply": reply})
+            return jsonify({
+            "reply": reply,
+            "limit": DAILY_QUESTION_LIMIT,
+            "used": used_questions,
+            "remaining": remaining_questions
+        })
 
         print("JUNDY AI LIVE TIME:", current_time_context)
         print("DEBUG: TIME CHECK REACHED")
@@ -359,10 +778,13 @@ def chat():
 
 
         reply = response.choices[0].message.content
-
+        print("JUNDY AI RESPONSE:", reply)
         return jsonify({
-            "reply": reply
-        })
+        "reply": reply,
+        "limit": DAILY_QUESTION_LIMIT,
+        "used": used_questions,
+        "remaining": remaining_questions
+    })
 
     
 
@@ -378,3 +800,7 @@ def chat():
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=False)
+
+
+with app.app_context():
+    db.create_all()

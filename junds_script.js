@@ -948,10 +948,23 @@ function addChatMessage(message, sender) {
             return "You can find Jundytech Solutions here: https://www.google.com/maps/search/?api=1&query=Jundytech+Solutions";
         }
 
+        // GET OR CREATE A UNIQUE VISITOR ID
+        function getVisitorId() {
+            let visitorId = localStorage.getItem("jundy_ai_visitor_id");
+
+            if (!visitorId) {
+                visitorId = crypto.randomUUID();
+                localStorage.setItem("jundy_ai_visitor_id", visitorId);
+            }
+
+            return visitorId;
+        }
+
         try {
             // CONNECT TO JUNDY ASSISTANT BACKEND
             const response = await fetch(
-                "https://jundy-assistant-api.onrender.com/chat",
+                //"https://jundy-assistant-api.onrender.com/chat",
+                "http://127.0.0.1:5000/chat",
                 {
                     method: "POST",
                     headers: {
@@ -959,7 +972,10 @@ function addChatMessage(message, sender) {
                     },
                     body: JSON.stringify({
                     message: message,
-                    history: conversationHistory
+                    history: conversationHistory,
+                    visitor_id: getVisitorId(),
+                    device_name: navigator.userAgentData?.platform || navigator.platform || "Unknown Device",
+                    browser_name: navigator.userAgent
                 })
                 }
             );
@@ -979,6 +995,13 @@ function addChatMessage(message, sender) {
             }
 
             console.log("BACKEND DATA:", data);
+
+            if (response.status === 429 && data.error === "daily_limit_reached") {
+            const error = new Error(data.message);
+            error.code = "DAILY_LIMIT_REACHED";
+            error.limitData = data;
+            throw error;
+            }
 
             if (!response.ok) {
                 throw new Error(data.error || "Backend request failed.");
@@ -1041,10 +1064,18 @@ function addChatMessage(message, sender) {
 
             console.error("AI Chatbot Error:", error);
 
-            addChatMessage(
-                "CHATBOT ERROR: " + error.message,
-                "bot"
-            );
+            if (error.code === "DAILY_LIMIT_REACHED") {
+
+                showDailyLimitPopup();
+
+            } else {
+
+                addChatMessage(
+                    "CHATBOT ERROR: " + error.message,
+                    "bot"
+                );
+
+            }
 
         }
     }
@@ -1131,3 +1162,89 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 
+// ==========================================
+// DAILY QUESTION LIMIT POPUP
+// ==========================================
+function showDailyLimitPopup() {
+
+    // Prevent duplicate popups
+    if (document.getElementById("dailyLimitPopup")) return;
+
+    const overlay = document.createElement("div");
+    overlay.id = "dailyLimitPopup";
+
+    overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 99999;
+        padding: 20px;
+    `;
+
+    overlay.innerHTML = `
+        <div style="
+            background: #151515;
+            border: 1px solid #ff3333;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 380px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-family: Arial, sans-serif;
+            box-shadow: 0 0 25px rgba(255, 0, 0, 0.25);
+        ">
+
+            <h2 style="color: #ff3333;">
+                Daily Limit Reached!
+            </h2>
+
+            <p>
+                You've used all 20 questions available for today.
+            </p>
+
+            <p style="color: #bbb;">
+                You can chat with JUNDY AI again tomorrow.
+            </p>
+
+            <hr style="border-color: #444; margin: 20px 0;">
+
+            <h3 style="color: #ff3333;">
+                Support Jundytech Solutions
+            </h3>
+
+            <p style="color: #ccc; font-size: 14px;">
+                If you enjoy using JUNDY AI, you can support
+                this project through GCash.
+            </p>
+
+            <p style="color: #888; font-size: 13px;">
+                GCash sponsorship details coming soon.
+            </p>
+
+            <button id="closeDailyLimitPopup" style="
+                margin-top: 15px;
+                padding: 12px 25px;
+                background: #ff3333;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: bold;
+            ">
+                Close
+            </button>
+
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById("closeDailyLimitPopup")
+        .addEventListener("click", () => {
+            overlay.remove();
+        });
+}

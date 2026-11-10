@@ -1,0 +1,528 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JUNDY AI | Admin Dashboard</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #090909;
+            color: #fff;
+            min-height: 100vh;
+            padding: 30px 5%;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        h1 {
+            color: #ff3030;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+
+        .panel {
+            background: #151515;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px;
+            margin: 10px 0;
+            background: #222;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: white;
+        }
+
+        button {
+            padding: 10px 14px;
+            margin: 3px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .primary {
+            background: #d71920;
+            color: white;
+        }
+
+        .secondary {
+            background: #333;
+            color: white;
+        }
+
+        .success {
+            background: #176b38;
+            color: white;
+        }
+
+        .danger {
+            background: #8b2020;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        #dashboard {
+            display: none;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            flex: 1;
+            min-width: 150px;
+            background: #202020;
+            padding: 18px;
+            border-radius: 8px;
+        }
+
+        .stat h2 {
+            color: #ff3030;
+            margin-top: 8px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 850px;
+        }
+
+        th, td {
+            padding: 13px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+            font-size: 13px;
+        }
+
+        th {
+            color: #ff5555;
+        }
+
+        td {
+            color: #ddd;
+        }
+
+        .status {
+            font-weight: bold;
+        }
+
+        .limited {
+            color: #ffc107;
+        }
+
+        .unlimited {
+            color: #36d477;
+        }
+
+        .blocked {
+            color: #ff5555;
+        }
+
+        #message {
+            margin-top: 12px;
+            color: #ff7777;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 20px 12px;
+            }
+
+            .panel {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>JUNDY AI</h1>
+    <p class="subtitle">Administrator Control Panel</p>
+
+    <!-- LOGIN -->
+    <section id="loginPanel" class="panel">
+        <h2>Admin Login</h2>
+
+        <form id="loginForm">
+            <input
+                type="text"
+                id="username"
+                placeholder="Admin Username"
+                autocomplete="username"
+                required
+            >
+
+            <input
+                type="password"
+                id="password"
+                placeholder="Admin Password"
+                autocomplete="current-password"
+                required
+            >
+
+            <button type="submit" class="primary">
+                Login
+            </button>
+        </form>
+
+        <p id="message"></p>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="dashboard">
+
+        <div class="topbar">
+            <div>
+                <h2>Visitor Management</h2>
+                <p class="subtitle">Manage JUNDY AI visitors and access.</p>
+            </div>
+
+            <div>
+                <button id="refreshButton" class="secondary">
+                    Refresh
+                </button>
+
+                <button id="logoutButton" class="danger">
+                    Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                Total Visitors
+                <h2 id="totalVisitors">0</h2>
+            </div>
+
+            <div class="stat">
+                Unlimited
+                <h2 id="unlimitedVisitors">0</h2>
+            </div>
+
+            <div class="stat">
+                Blocked
+                <h2 id="blockedVisitors">0</h2>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Registered Devices</h3>
+            <br>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Device Label</th>
+                            <th>Device</th>
+                            <th>Browser</th>
+                            <th>Questions Today</th>
+                            <th>Access</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="visitorTable">
+                        <tr>
+                            <td colspan="7">Loading visitors...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p id="dashboardMessage"></p>
+        </div>
+
+    </section>
+
+</div>
+
+<script>
+    const API_URL = "https://jundy-assistant-api.onrender.com";
+
+    const loginPanel = document.getElementById("loginPanel");
+    const dashboard = document.getElementById("dashboard");
+    const loginForm = document.getElementById("loginForm");
+    const message = document.getElementById("message");
+
+    function escapeHTML(value) {
+        return String(value ?? "").replace(/[&<>"']/g, character => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        })[character]);
+    }
+
+    async function apiRequest(path, options = {}) {
+        const response = await fetch(API_URL + path, {
+            ...options,
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json",
+                ...options.headers
+            }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || result.error || "Request failed.");
+        }
+
+        return result;
+    }
+
+    function showDashboard() {
+        loginPanel.style.display = "none";
+        dashboard.style.display = "block";
+    }
+
+    function showLogin() {
+        dashboard.style.display = "none";
+        loginPanel.style.display = "block";
+    }
+
+    async function loadVisitors() {
+        const table = document.getElementById("visitorTable");
+        const dashboardMessage = document.getElementById("dashboardMessage");
+
+        dashboardMessage.textContent = "Loading visitors...";
+
+        try {
+            const result = await apiRequest("/admin/visitors");
+
+            const visitors = result.visitors;
+
+            document.getElementById("totalVisitors").textContent =
+                visitors.length;
+
+            document.getElementById("unlimitedVisitors").textContent =
+                visitors.filter(v => v.access_type === "unlimited").length;
+
+            document.getElementById("blockedVisitors").textContent =
+                visitors.filter(v => v.is_blocked).length;
+
+            if (visitors.length === 0) {
+                table.innerHTML = `
+                    <tr>
+                        <td colspan="7">No visitors registered yet.</td>
+                    </tr>
+                `;
+                dashboardMessage.textContent = "";
+                return;
+            }
+
+            table.innerHTML = visitors.map(visitor => {
+                const accessClass =
+                    visitor.access_type === "unlimited"
+                        ? "unlimited"
+                        : "limited";
+
+                return `
+                    <tr>
+                        <td>${escapeHTML(visitor.device_label || "Unnamed Device")}</td>
+
+                        <td>${escapeHTML(visitor.device_name)}</td>
+
+                        <td>${escapeHTML(visitor.browser_name)}</td>
+
+                        <td>${escapeHTML(visitor.questions_today)}</td>
+
+                        <td class="status ${accessClass}">
+                            ${escapeHTML(visitor.access_type)}
+                        </td>
+
+                        <td class="status ${visitor.is_blocked ? "blocked" : "unlimited"}">
+                            ${visitor.is_blocked ? "Blocked" : "Active"}
+                        </td>
+
+                        <td>
+                            <button
+                                class="secondary"
+                                data-action="rename"
+                                data-id="${escapeHTML(visitor.visitor_id)}">
+                                Rename
+                            </button>
+
+                            <button
+                                class="success"
+                                data-action="access"
+                                data-id="${escapeHTML(visitor.visitor_id)}"
+                                data-type="${visitor.access_type === "unlimited" ? "limited" : "unlimited"}"
+                                data-blocked="false">
+                                ${visitor.access_type === "unlimited" ? "Revoke Unlimited" : "Grant Unlimited"}
+                            </button>
+
+                            <button
+                                class="danger"
+                                data-action="access"
+                                data-id="${escapeHTML(visitor.visitor_id)}"
+                                data-type="${escapeHTML(visitor.access_type)}"
+                                data-blocked="${visitor.is_blocked ? "false" : "true"}">
+                                ${visitor.is_blocked ? "Unblock" : "Block"}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+
+            dashboardMessage.textContent = "";
+
+        } catch (error) {
+            if (error.message.includes("Unauthorized")) {
+                showLogin();
+            }
+
+            dashboardMessage.textContent = error.message;
+        }
+    }
+
+    loginForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        message.textContent = "Checking credentials...";
+
+        try {
+            await apiRequest("/admin/login", {
+                method: "POST",
+                body: JSON.stringify({
+                    username: document.getElementById("username").value,
+                    password: document.getElementById("password").value
+                })
+            });
+
+            loginForm.reset();
+            message.textContent = "";
+
+            showDashboard();
+            await loadVisitors();
+
+        } catch (error) {
+            message.textContent = error.message;
+        }
+    });
+
+    document.getElementById("refreshButton").addEventListener("click", loadVisitors);
+
+    document.getElementById("logoutButton").addEventListener("click", async function() {
+        try {
+            await apiRequest("/admin/logout", {
+                method: "POST"
+            });
+
+            showLogin();
+
+        } catch (error) {
+            document.getElementById("dashboardMessage").textContent = error.message;
+        }
+    });
+
+    document.getElementById("visitorTable").addEventListener("click", async function(event) {
+        const button = event.target.closest("button[data-action]");
+
+        if (!button) return;
+
+        const visitorId = button.dataset.id;
+
+        try {
+            if (button.dataset.action === "rename") {
+                const newName = prompt("Enter a new device name:");
+
+                if (newName === null) return;
+
+                await apiRequest("/admin/visitors/rename", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        visitor_id: visitorId,
+                        device_label: newName
+                    })
+                });
+            }
+
+            if (button.dataset.action === "access") {
+                const newType = button.dataset.type;
+                const newBlocked = button.dataset.blocked === "true";
+
+                await apiRequest("/admin/visitors/access", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        visitor_id: visitorId,
+                        access_type: newType,
+                        is_blocked: newBlocked
+                    })
+                });
+            }
+
+            await loadVisitors();
+
+        } catch (error) {
+            document.getElementById("dashboardMessage").textContent = error.message;
+        }
+    });
+
+    // Check whether an admin session already exists.
+    async function checkAdminSession() {
+        try {
+            await apiRequest("/admin/visitors");
+            showDashboard();
+            await loadVisitors();
+        } catch (error) {
+            showLogin();
+        }
+    }
+
+    checkAdminSession();
+</script>
+
+</body>
+</html>
