@@ -74,16 +74,20 @@
                      alt="Jundy Gagu profile picture"
                      class="profile-picture profile-blurred">
 
+                
                 <div class="picture-overlay">
-                    <a href="FILES/Rodolfo_Conejos_Resume.pdf"
-                       download="Rodolfo_Conejos_Resume.pdf"
-                       class="resume-btn">
 
-                        <i class="fa-solid fa-download"></i>
-                        Download Resume
+                    <button type="button"
+                            class="resume-btn"
+                            id="previewResumeButton">
 
-                    </a>
+                        <i class="fa-solid fa-eye"></i>
+                        Preview Resume
+
+                    </button>
+
                 </div>
+
 
             </div>
 
@@ -103,25 +107,29 @@
                 </div>
             
                 <!-- HOME ACTION BUTTONS -->
+            
             <div class="home-buttons">
 
-                <button type="button" class="home-btn contact-btn" id="getInTouchButton">
+                <button type="button"
+                        class="home-btn contact-btn"
+                        id="getInTouchButton">
+
                     <i class="fa-solid fa-paper-plane"></i>
                     Get in Touch
+
                 </button>
 
-                <a href="FILES/Rodolfo_Conejos_Resume.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="home-btn view-resume-btn"
-                id="viewResumeButton">
+                <button type="button"
+                        class="home-btn view-resume-btn"
+                        id="viewResumeButton">
 
                     <i class="fa-solid fa-file-pdf"></i>
                     View Resume
 
-                </a>
+                </button>
 
             </div>
+
             </div>
 
         </section>
@@ -867,6 +875,48 @@
 
         <!-- JAVASCRIPT -->
         <script src="junds_script.js?v=3"></script>
+
+
+        <!-- RESUME PREVIEW OVERLAY -->
+        <div class="resume-preview-overlay" id="resumePreviewOverlay">
+
+            <div class="resume-preview-container">
+
+                <div class="resume-preview-header">
+                    <h2>My Resume</h2>
+
+                    <button type="button"
+                            id="closeResumePreview"
+                            aria-label="Close resume preview">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="resume-preview-content">
+
+                    <img
+                        src="https://jundy-assistant-api.onrender.com/resume/preview/1"
+                        alt="Resume Page 1"
+                    >
+
+                    <img
+                        src="https://jundy-assistant-api.onrender.com/resume/preview/2"
+                        alt="Resume Page 2"
+                    >
+
+                </div>
+
+                <div class="resume-preview-footer">
+                    <button type="button" id="requestResumeDownload">
+                        <i class="fa-solid fa-download"></i>
+                        Request Download
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
 
 </body>
 </html>

@@ -787,6 +787,29 @@ document.addEventListener("DOMContentLoaded", function () {
     const sendButton = document.getElementById("chatbotSend");
     const quickQuestions = document.querySelector(".chatbot-quick-questions");
 
+
+    // OPEN RESUME PREVIEW
+    const previewResumeButton = document.getElementById("previewResumeButton");
+    const resumePreviewOverlay = document.getElementById("resumePreviewOverlay");
+    const closeResumePreview = document.getElementById("closeResumePreview");
+
+    if (previewResumeButton && resumePreviewOverlay) {
+
+        previewResumeButton.addEventListener("click", function () {
+            resumePreviewOverlay.classList.add("show");
+        });
+
+    }
+
+    if (closeResumePreview && resumePreviewOverlay) {
+
+        closeResumePreview.addEventListener("click", function () {
+            resumePreviewOverlay.classList.remove("show");
+        });
+
+    }
+
+
             // ===============================
         // RANDOM CHATBOT GREETINGS
         // ===============================
@@ -842,10 +865,28 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
-    // OPEN CHATBOT
+    // OPEN CHATBOT WITH DAILY USAGE NOTICE
     toggle.addEventListener("click", function () {
-        chatWindow.classList.toggle("active");
+
+        // If chatbot is already open, close it
+        if (chatWindow.classList.contains("active")) {
+            chatWindow.classList.remove("active");
+            return;
+        }
+
+        // Check if user already accepted during this session
+        if (sessionStorage.getItem("jundyAIUsageAccepted") === "true") {
+            chatWindow.classList.add("active");
+            return;
+        }
+
+        // Show notice before opening chatbot
+        showAIUsageNotice(() => {
+            chatWindow.classList.add("active");
+        });
+
     });
+
 
     // CLOSE CHATBOT
     if (closeButton) {
@@ -1142,34 +1183,87 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // GET IN TOUCH - REVEAL PROFILE AND RESUME BUTTON
 
+
 document.addEventListener("DOMContentLoaded", function () {
 
     const getInTouchButton = document.getElementById("getInTouchButton");
     const viewResumeButton = document.getElementById("viewResumeButton");
     const profilePicture = document.querySelector(".profile-picture");
 
+    const resumePreviewOverlay = document.getElementById("resumePreviewOverlay");
+    const closeResumePreview = document.getElementById("closeResumePreview");
+
+    
+    // GET IN TOUCH FUNCTION
     if (getInTouchButton && viewResumeButton && profilePicture) {
 
         getInTouchButton.addEventListener("click", function () {
 
-            // UNBLUR PROFILE PICTURE
             profilePicture.classList.add("profile-revealed");
 
-            // HIDE GET IN TOUCH BUTTON
             getInTouchButton.style.display = "none";
 
-            // SHOW VIEW RESUME BUTTON
             viewResumeButton.classList.add("show");
 
         });
 
     }
 
+
+    // OPEN RESUME PREVIEW
+    if (viewResumeButton && resumePreviewOverlay) {
+
+        viewResumeButton.addEventListener("click", function () {
+
+            resumePreviewOverlay.classList.add("show");
+            document.body.style.overflow = "hidden";
+
+        });
+
+    }
+
+    // CLOSE RESUME PREVIEW
+    function closePreview() {
+
+        if (!resumePreviewOverlay) return;
+
+        resumePreviewOverlay.classList.remove("show");
+        document.body.style.overflow = "";
+
+    }
+
+    if (closeResumePreview) {
+        closeResumePreview.addEventListener("click", closePreview);
+    }
+
+    // CLOSE WHEN CLICKING OUTSIDE THE PREVIEW
+    if (resumePreviewOverlay) {
+
+        resumePreviewOverlay.addEventListener("click", function (event) {
+
+            if (event.target === resumePreviewOverlay) {
+                closePreview();
+            }
+
+        });
+
+    }
+
+    // CLOSE USING ESCAPE KEY
+    document.addEventListener("keydown", function (event) {
+
+        if (event.key === "Escape") {
+            closePreview();
+        }
+
+    });
+
 });
 
 // ==========================================
 // DAILY QUESTION LIMIT POPUP
 // ==========================================
+
 function showDailyLimitPopup() {
 
     // Prevent duplicate popups
@@ -1181,66 +1275,190 @@ function showDailyLimitPopup() {
     overlay.style.cssText = `
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.85);
+        background: rgba(0, 0, 0, 0.88);
+        backdrop-filter: blur(8px);
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 99999;
-        padding: 20px;
+        padding: 18px;
+        overflow-y: auto;
     `;
 
     overlay.innerHTML = `
         <div style="
-            background: #151515;
-            border: 1px solid #ff3333;
-            border-radius: 15px;
-            padding: 30px;
-            max-width: 380px;
+            background: linear-gradient(145deg, #1a1a1a, #0c0c0c);
+            border: 1px solid rgba(255, 51, 51, 0.5);
+            border-radius: 20px;
+            padding: 30px 25px;
+            max-width: 400px;
             width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
             text-align: center;
             color: white;
             font-family: Arial, sans-serif;
-            box-shadow: 0 0 25px rgba(255, 0, 0, 0.25);
+            box-shadow: 0 0 35px rgba(255, 0, 0, 0.15);
+            box-sizing: border-box;
         ">
 
-            <h2 style="color: #ff3333;">
-                Daily Limit Reached!
+            <div style="
+                width: 65px;
+                height: 65px;
+                margin: 0 auto 18px;
+                border-radius: 50%;
+                background: rgba(255, 51, 51, 0.12);
+                border: 1px solid rgba(255, 51, 51, 0.4);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 30px;
+            ">
+                ❤️
+            </div>
+
+            <h2 style="
+                color: #ff4444;
+                font-size: 23px;
+                margin: 0 0 12px;
+            ">
+                Sorry for the Limited Access!
             </h2>
 
-            <p>
-                You've used all 20 questions available for today.
+            <p style="
+                color: #ccc;
+                font-size: 14px;
+                line-height: 1.7;
+                margin-bottom: 18px;
+            ">
+                You've reached your daily limit of
+                <strong style="color: white;">20 questions</strong>.
+                We're sorry for the inconvenience!
             </p>
 
-            <p style="color: #bbb;">
-                You can chat with JUNDY AI again tomorrow.
-            </p>
+            <div style="
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid #333;
+                border-radius: 12px;
+                padding: 16px;
+                margin-bottom: 20px;
+            ">
 
-            <hr style="border-color: #444; margin: 20px 0;">
+                <h3 style="
+                    color: white;
+                    font-size: 16px;
+                    margin: 0 0 10px;
+                ">
+                    Why is access limited?
+                </h3>
 
-            <h3 style="color: #ff3333;">
-                Support Jundytech Solutions
+                <p style="
+                    color: #aaa;
+                    font-size: 13px;
+                    line-height: 1.7;
+                    margin: 0;
+                ">
+                    Running AI services comes with a cost.
+                    As an independent project, I currently have
+                    limited resources to keep JUNDY AI running.
+                </p>
+
+            </div>
+
+            <h3 style="
+                color: #ff4444;
+                font-size: 19px;
+                margin-bottom: 10px;
+            ">
+                Support JUNDY AI
             </h3>
 
-            <p style="color: #ccc; font-size: 14px;">
-                If you enjoy using JUNDY AI, you can support
-                this project through GCash.
+            <p style="
+                color: #ccc;
+                font-size: 13px;
+                line-height: 1.7;
+                margin-bottom: 18px;
+            ">
+                If you find JUNDY AI helpful, any contribution
+                through GCash would mean a lot.
+                Your support will help me afford an AI plan
+                and work toward providing unlimited access
+                for everyone!
             </p>
 
-            <p style="color: #888; font-size: 13px;">
-                GCash sponsorship details coming soon.
+            <div style="
+                background: rgba(0, 150, 255, 0.08);
+                border: 1px solid rgba(0, 150, 255, 0.35);
+                border-radius: 12px;
+                padding: 16px;
+                margin-bottom: 20px;
+            ">
+
+                <div style="
+                    color: #35aaff;
+                    font-size: 19px;
+                    font-weight: bold;
+                    margin-bottom: 8px;
+                ">
+                    GCash Support
+                </div>
+
+                <p style="
+                    color: #aaa;
+                    font-size: 12px;
+                    margin: 0;
+                ">
+                    <img
+                    src="PICS/gcash-qr.png"
+                    alt="JUNDY AI GCash QR Code"
+                    style="
+                        width: 190px;
+                        max-width: 100%;
+                        height: auto;
+                        display: block;
+                        margin: 12px auto;
+                        border-radius: 10px;
+                        background: white;
+                        padding: 8px;
+                        box-sizing: border-box;
+                    "
+                >
+
+                <p style="
+                    color: #35aaff;
+                    font-size: 13px;
+                    font-weight: bold;
+                    margin: 10px 0 0;
+                ">
+                    SCAN TO SUPPORT JUNDY AI
+                </p>
+                </p>
+
+            </div>
+
+            <p style="
+                color: #888;
+                font-size: 12px;
+                line-height: 1.6;
+                margin-bottom: 20px;
+            ">
+                Your support is completely voluntary.
+                Thank you for helping this small project grow!
             </p>
 
             <button id="closeDailyLimitPopup" style="
-                margin-top: 15px;
-                padding: 12px 25px;
-                background: #ff3333;
+                width: 100%;
+                padding: 13px;
+                background: linear-gradient(90deg, #ff3333, #c90000);
                 color: white;
                 border: none;
-                border-radius: 8px;
+                border-radius: 10px;
                 cursor: pointer;
+                font-size: 14px;
                 font-weight: bold;
+                letter-spacing: 0.5px;
             ">
-                Close
+                CLOSE
             </button>
 
         </div>
@@ -1249,6 +1467,163 @@ function showDailyLimitPopup() {
     document.body.appendChild(overlay);
 
     document.getElementById("closeDailyLimitPopup")
+        .addEventListener("click", () => {
+            overlay.remove();
+        });
+}
+
+
+
+function showAIUsageNotice(onAccept) {
+
+    // Prevent duplicate notices
+    if (document.getElementById("aiUsageNotice")) return;
+
+    const overlay = document.createElement("div");
+    overlay.id = "aiUsageNotice";
+
+    overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.88);
+        backdrop-filter: blur(8px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 100000;
+        padding: 18px;
+    `;
+
+    overlay.innerHTML = `
+        <div style="
+            background: linear-gradient(145deg, #1a1a1a, #0b0b0b);
+            border: 1px solid rgba(255, 51, 51, 0.5);
+            border-radius: 20px;
+            padding: 28px 23px;
+            max-width: 390px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-family: Arial, sans-serif;
+            box-shadow: 0 0 35px rgba(255, 0, 0, 0.2);
+        ">
+
+            <div style="font-size: 38px; margin-bottom: 12px;">
+                🤖
+            </div>
+
+            <h2 style="
+                color: #ff4444;
+                font-size: 23px;
+                margin: 0 0 12px;
+            ">
+                Before You Start!
+            </h2>
+
+            <p style="
+                color: #ccc;
+                font-size: 14px;
+                line-height: 1.7;
+            ">
+                Welcome to JUNDY AI! Before starting a conversation,
+                please take a moment to read our usage notice.
+            </p>
+
+            <div style="
+                background: rgba(255, 51, 51, 0.07);
+                border: 1px solid #492222;
+                border-radius: 12px;
+                padding: 16px;
+                margin: 18px 0;
+                text-align: left;
+            ">
+
+                <h3 style="
+                    color: #ff5555;
+                    text-align: center;
+                    margin: 0 0 12px;
+                    font-size: 17px;
+                ">
+                    Daily Usage Limit
+                </h3>
+
+                <p style="
+                    color: white;
+                    font-size: 14px;
+                    text-align: center;
+                    margin-bottom: 15px;
+                ">
+                    <strong style="font-size: 25px; color: #ff4444;">
+                        20 QUESTIONS
+                    </strong>
+                    <br>
+                    <span style="color: #aaa; font-size: 12px;">
+                        per day
+                    </span>
+                </p>
+
+                <p style="color: #ccc; font-size: 13px; line-height: 1.8; margin: 0;">
+                    • Access is currently free but limited.<br>
+                    • Your daily limit resets tomorrow.<br>
+                    • Please use your available questions wisely.<br>
+                </p>
+
+            </div>
+
+            <p style="
+                color: #999;
+                font-size: 12px;
+                line-height: 1.6;
+                margin-bottom: 20px;
+            ">
+                By continuing, you acknowledge and agree to
+                these usage limitations.
+            </p>
+
+            <button id="acceptAIUsage" style="
+                width: 100%;
+                padding: 14px;
+                background: linear-gradient(90deg, #ff3333, #c90000);
+                color: white;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                font-weight: bold;
+                font-size: 14px;
+                margin-bottom: 10px;
+            ">
+                ACCEPT & CONTINUE
+            </button>
+
+            <button id="declineAIUsage" style="
+                width: 100%;
+                padding: 12px;
+                background: transparent;
+                color: #aaa;
+                border: 1px solid #444;
+                border-radius: 10px;
+                cursor: pointer;
+                font-weight: bold;
+                font-size: 13px;
+            ">
+                DECLINE
+            </button>
+
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById("acceptAIUsage")
+        .addEventListener("click", () => {
+            sessionStorage.setItem("jundyAIUsageAccepted", "true");
+            overlay.remove();
+            if (typeof onAccept === "function") {
+                onAccept();
+            }
+        });
+
+    document.getElementById("declineAIUsage")
         .addEventListener("click", () => {
             overlay.remove();
         });
