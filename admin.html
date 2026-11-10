@@ -708,16 +708,16 @@
                 alert("Resume request approved!");
             }
 
-            else if (action === "reject-resume") {
-                if (!confirm("Reject this resume download request?")) return;
+            else if (action === "send-resume") {
+            if (!confirm("Send the resume PDF to this visitor?")) return;
 
-                await apiRequest(
-                    `/admin/resume-requests/${requestId}/reject`,
-                    { method: "POST" }
-                );
+            const result = await apiRequest(
+                `/admin/resume-requests/${requestId}/send`,
+                { method: "POST" }
+            );
 
-                alert("Resume request rejected!");
-            }
+            alert(result.message || "Resume sent successfully!");
+        }
 
             await loadResumeRequests();
 
