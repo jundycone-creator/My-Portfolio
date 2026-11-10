@@ -1,5 +1,7 @@
 Flask
-flask-cors
+Flask-CORS
+Flask-SQLAlchemy
 python-dotenv
-groq
 gunicorn
+groq
+psycopg2-binary
