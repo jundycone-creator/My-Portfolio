@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from pathlib import Path
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 from groq import Groq
@@ -571,6 +571,27 @@ def admin_resume_requests():
     })
 
 @app.route("/resume/request", methods=["POST"])
+
+@app.route("/resume/preview/<int:page_number>", methods=["GET"])
+def preview_resume_page(page_number):
+
+    if page_number not in [1, 2]:
+        return jsonify({
+            "error": "Resume page not found."
+        }), 404
+
+    image_folder = (
+        Path(__file__).resolve().parent
+        / "resume_preview"
+    )
+
+    return send_from_directory(
+        image_folder,
+        f"resume_page_{page_number}.jpg",
+        mimetype="image/jpeg",
+        as_attachment=False
+    )
+
 def submit_resume_request():
 
     data = request.get_json(silent=True) or {}
