@@ -963,8 +963,8 @@ function addChatMessage(message, sender) {
         try {
             // CONNECT TO JUNDY ASSISTANT BACKEND
             const response = await fetch(
-                //"https://jundy-assistant-api.onrender.com/chat",
-                "http://127.0.0.1:5000/chat",
+                "https://jundy-assistant-api.onrender.com/chat",
+                //"http://127.0.0.1:5000/chat",
                 {
                     method: "POST",
                     headers: {
@@ -1015,6 +1015,11 @@ function addChatMessage(message, sender) {
 
         } catch (error) {
             console.error("JUNDY ASSISTANT ERROR:", error);
+            alert(
+                "JUNDY AI ERROR:\n" +
+                error.name + "\n" +
+                error.message
+            );
             throw error;
         }
     }
