@@ -869,7 +869,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     `${window.location.hostname === "127.0.0.1" ||
                     window.location.hostname === "localhost"
                         ? "http://127.0.0.1:5000"
-                        : "https://jundy-assistant-api.onrender.com"}/appeal`,
+                        : "https://jundy-assistant-api.onrender.com"}/resume/request`,
                     {
                         method: "POST",
                         headers: {
