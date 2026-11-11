@@ -734,10 +734,11 @@ def send_resume_pdf_via_gmail(resume_request):
         )
     )
 
-    resume_path = (
-        BASE_DIR
-        / "private_files"
-        / "Rodolfo_Conejos_Resume.pdf"
+    resume_path = Path(
+        os.getenv(
+            "RESUME_PDF_FILE",
+            "/etc/secrets/Rodolfo_Conejos_Resume.pdf"
+        )
     )
 
     if not token_path.exists():
