@@ -708,16 +708,27 @@
                 alert("Resume request approved!");
             }
 
+            else if (action === "reject-resume") {
+                if (!confirm("Reject this resume download request?")) return;
+
+                await apiRequest(
+                    `/admin/resume-requests/${requestId}/reject`,
+                    { method: "POST" }
+                );
+
+                alert("Resume request rejected!");
+            }
+
             else if (action === "send-resume") {
-            if (!confirm("Send the resume PDF to this visitor?")) return;
+                if (!confirm("Send the resume PDF to this visitor?")) return;
 
-            const result = await apiRequest(
-                `/admin/resume-requests/${requestId}/send`,
-                { method: "POST" }
-            );
+                const result = await apiRequest(
+                    `/admin/resume-requests/${requestId}/send`,
+                    { method: "POST" }
+                );
 
-            alert(result.message || "Resume sent successfully!");
-        }
+                alert(result.message || "Resume sent successfully!");
+            }
 
             await loadResumeRequests();
 
@@ -726,6 +737,7 @@
                 error.message;
         }
     });
+
 
 
     // Check whether an admin session already exists.
