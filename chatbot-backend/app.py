@@ -746,6 +746,11 @@ def send_resume_pdf_via_gmail(resume_request):
         raise FileNotFoundError("Gmail token file not found.")
 
     print("Gmail token file size:", token_path.stat().st_size)
+    token_text = token_path.read_text(encoding="utf-8")
+
+    print("Token starts with opening brace:", token_text.lstrip().startswith("{"))
+    print("Token ends with closing brace:", token_text.rstrip().endswith("}"))
+    print("Token content length:", len(token_text))
 
     if not resume_path.exists():
         raise FileNotFoundError("Private resume PDF not found.")
