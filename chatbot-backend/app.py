@@ -754,6 +754,11 @@ def send_resume_pdf_via_gmail(resume_request):
 
     if not resume_path.exists():
         raise FileNotFoundError("Private resume PDF not found.")
+    pdf_check = resume_path.read_bytes()
+
+    print("Resume PDF size:", len(pdf_check))
+    print("Resume PDF header valid:", pdf_check.startswith(b"%PDF-"))
+    print("Resume PDF ending valid:", pdf_check.rstrip().endswith(b"%%EOF"))
 
     SCOPES = [
         "https://www.googleapis.com/auth/gmail.send"
