@@ -22,6 +22,7 @@ from google.auth.transport.requests import Request as GoogleAuthRequest
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 import traceback
+import html
 
 
 # Load API key from .env
@@ -682,28 +683,78 @@ def send_resume_approval_email(resume_request):
         f"{resume_request.download_token}"
     )
 
+    safe_name = html.escape(resume_request.full_name)
+    safe_download_url = html.escape(download_url, quote=True)
+
     payload = {
         "from": from_email,
         "to": [resume_request.email],
         "subject": "Your Resume Download Request Was Approved",
         "text": f"""
-Hello {resume_request.full_name},
+    Hello {resume_request.full_name},
 
-Your request to download my resume has been approved.
+    Your request to download my resume has been approved.
 
-You can download the PDF using this secure link:
+    You can download the PDF using this secure link:
 
-{download_url}
+    {download_url}
 
-This link expires 24 hours after approval.
+    This link expires 24 hours after approval.
 
-Thank you for your interest.
+    Thank you for your interest.
 
-Regards,
-Rodolfo Conejos
-"""
+    Regards,
+    Rodolfo Conejos
+    Jundytech Solutions
+    """,
+        "html": f"""
+        <div style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 30px;">
+            <div style="max-width: 550px; margin: auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #eeeeee;">
+
+                <div style="background: #111111; padding: 25px; text-align: center;">
+                    <h2 style="color: #ffffff; margin: 0;">Jundytech Solutions</h2>
+                    <p style="color: #aaaaaa; margin-bottom: 0;">Resume Request Update</p>
+                </div>
+
+                <div style="padding: 30px;">
+                    <p style="color: #333333;">Hello <strong>{safe_name}</strong>,</p>
+
+                    <p style="color: #555555; line-height: 1.6;">
+                        Your request to download my resume has been reviewed.
+                    </p>
+
+                    <div style="background: #ecfdf3; border: 1px solid #a7f3c0; border-radius: 8px; padding: 18px; text-align: center; margin: 25px 0;">
+                        <span style="color: #15803d; font-size: 20px; font-weight: bold;">
+                            APPROVED
+                        </span>
+                        <p style="color: #555555; margin-bottom: 0;">
+                            Your resume download request has been approved.
+                        </p>
+                    </div>
+
+                    <p style="color: #555555; line-height: 1.6;">
+                        You can download your resume using the button below.
+                        This secure link expires 24 hours after approval.
+                    </p>
+
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="{safe_download_url}"
+                        style="display: inline-block; background: #15803d; color: #ffffff; padding: 14px 25px; border-radius: 7px; text-decoration: none; font-weight: bold;">
+                            Download My Resume
+                        </a>
+                    </div>
+
+                    <p style="color: #333333; line-height: 1.6;">
+                        Regards,<br>
+                        <strong>Rodolfo Conejos</strong><br>
+                        Jundytech Solutions
+                    </p>
+                </div>
+
+            </div>
+        </div>
+        """
     }
-
     req = Request(
         "https://api.resend.com/emails",
         data=json.dumps(payload).encode("utf-8"),
@@ -962,17 +1013,55 @@ def reject_resume_request(request_id):
             "to": [resume_request.email],
             "subject": "Resume Download Request Update",
             "text": f"""
-Hello {resume_request.full_name},
+        Hello {resume_request.full_name},
 
-Thank you for your interest in my resume.
+        Your resume download request was not approved.
 
-Unfortunately, your resume download request was not approved.
+        Thank you for your understanding.
 
-Thank you for your understanding.
+        Regards,
+        Rodolfo Conejos
+        Jundytech Solutions
+        """,
+            "html": f"""
+            <div style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 30px;">
+                <div style="max-width: 550px; margin: auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #eeeeee;">
 
-Regards,
-Rodolfo Conejos
-"""
+                    <div style="background: #111111; padding: 25px; text-align: center;">
+                        <h2 style="color: #ffffff; margin: 0;">Jundytech Solutions</h2>
+                        <p style="color: #aaaaaa; margin-bottom: 0;">Resume Request Update</p>
+                    </div>
+
+                    <div style="padding: 30px;">
+                        <p style="color: #333333;">Hello <strong>{resume_request.full_name}</strong>,</p>
+
+                        <p style="color: #555555; line-height: 1.6;">
+                            Thank you for your interest in my resume.
+                        </p>
+
+                        <div style="background: #fff0f0; border: 1px solid #ffcaca; border-radius: 8px; padding: 18px; text-align: center; margin: 25px 0;">
+                            <span style="color: #dc2626; font-size: 20px; font-weight: bold;">
+                                REJECTED
+                            </span>
+                            <p style="color: #777777; margin-bottom: 0;">
+                                Your resume download request was not approved.
+                            </p>
+                        </div>
+
+                        <p style="color: #555555; line-height: 1.6;">
+                            Thank you for your understanding.
+                        </p>
+
+                        <p style="color: #333333; line-height: 1.6;">
+                            Regards,<br>
+                            <strong>Rodolfo Conejos</strong><br>
+                            Jundytech Solutions
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+            """
         }
 
         req = Request(

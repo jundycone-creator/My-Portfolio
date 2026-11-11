@@ -811,37 +811,65 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // REQUEST RESUME DOWNLOAD
     const requestResumeDownload = document.getElementById("requestResumeDownload");
+    const resumeRequestOverlay = document.getElementById("resumeRequestOverlay");
+    const resumeRequestForm = document.getElementById("resumeRequestForm");
+    const submitResumeRequest = document.getElementById("submitResumeRequest");
+    const resumeRequestMessage = document.getElementById("resumeRequestMessage");
 
-    if (requestResumeDownload) {
+    if (requestResumeDownload && resumeRequestOverlay) {
 
-        requestResumeDownload.addEventListener("click", async function () {
+        requestResumeDownload.addEventListener("click", function () {
+            resumeRequestOverlay.classList.add("show");
+        });
 
-            const fullName = prompt("Please enter your full name:");
-            if (!fullName || !fullName.trim()) return;
+    }
 
-            const email = prompt("Please enter your email address:");
-            if (!email || !email.trim()) return;
+    function closeResumeRequestForm() {
+        resumeRequestOverlay.classList.remove("show");
+        resumeRequestMessage.textContent = "";
+    }
 
-            const purpose = prompt("Why do you need a copy of my resume?");
-            if (!purpose || !purpose.trim()) return;
+    document.getElementById("closeResumeRequest").addEventListener(
+        "click", closeResumeRequestForm
+    );
 
-            requestResumeDownload.disabled = true;
-            requestResumeDownload.textContent = "Submitting Request...";
+    document.getElementById("cancelResumeRequest").addEventListener(
+        "click", closeResumeRequestForm
+    );
+
+    if (resumeRequestForm) {
+
+        resumeRequestForm.addEventListener("submit", async function (event) {
+
+            event.preventDefault();
+
+            const fullName = document.getElementById("resumeFullName").value.trim();
+            const email = document.getElementById("resumeEmail").value.trim();
+            const purpose = document.getElementById("resumePurpose").value.trim();
+
+            if (!fullName || !email || !purpose) {
+                resumeRequestMessage.textContent = "Please complete all fields.";
+                return;
+            }
+
+            submitResumeRequest.disabled = true;
+            submitResumeRequest.innerHTML = "Submitting Request...";
+
+            resumeRequestMessage.textContent = "";
 
             try {
 
                 const response = await fetch(
                     "https://jundy-assistant-api.onrender.com/resume/request",
-                    //"http://127.0.0.1:5000/resume/request",
                     {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json"
                         },
                         body: JSON.stringify({
-                            full_name: fullName.trim(),
-                            email: email.trim(),
-                            purpose: purpose.trim()
+                            full_name: fullName,
+                            email: email,
+                            purpose: purpose
                         })
                     }
                 );
@@ -852,24 +880,30 @@ document.addEventListener("DOMContentLoaded", function () {
                     throw new Error(data.message || data.error || "Request failed.");
                 }
 
-                alert("Your resume download request has been submitted. Please wait for approval.");
+                alert("Your resume request has been submitted successfully. Please wait for approval.");
+
+                resumeRequestForm.reset();
+                closeResumeRequestForm();
 
             } catch (error) {
 
                 console.error("Resume request error:", error);
-                alert("Unable to submit your request. Please try again.");
+
+                resumeRequestMessage.textContent =
+                    error.message || "Unable to submit your request. Please try again.";
 
             } finally {
 
-                requestResumeDownload.disabled = false;
-                requestResumeDownload.innerHTML =
-                    '<i class="fa-solid fa-download"></i> Request Download';
+                submitResumeRequest.disabled = false;
+                submitResumeRequest.innerHTML =
+                    '<i class="fa-solid fa-paper-plane"></i> Submit Request';
 
             }
 
         });
 
     }
+
 
 
             // ===============================
