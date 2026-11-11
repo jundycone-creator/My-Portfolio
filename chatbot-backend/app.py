@@ -991,8 +991,12 @@ def reject_resume_request(request_id):
 
     db.session.commit()
 
-    email_sent = False
+    try:
+        send_resume_approval_email(resume_request)
+        print("Resume approval email sent successfully.")
 
+    except Exception as e:
+        print("Resume approval email failed:", e)
     
     email_sent = False
 
