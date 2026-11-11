@@ -4,87 +4,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#090909">
     <title>JUNDY AI | Admin Dashboard</title>
 
-    <style>
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --bg: #050505;
+            --surface: rgba(18, 18, 20, 0.92);
+            --surface-2: #151518;
+            --surface-3: #202024;
+            --border: rgba(255, 255, 255, 0.09);
+            --text: #f5f5f5;
+            --muted: #9999a3;
+            --red: #ed1c24;
+            --red-bright: #ff3b43;
+            --red-dark: #690b10;
+            --green: #35d07f;
+            --yellow: #f6c453;
+            --radius: 18px;
+            --shadow: 0 18px 55px rgba(0, 0, 0, 0.45);
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
         }
 
         body {
-            background: #090909;
-            color: #fff;
             min-height: 100vh;
-            padding: 30px 5%;
+            padding: 34px 4%;
+            color: var(--text);
+            font-family: 'Poppins', Arial, sans-serif;
+            background:
+                radial-gradient(circle at 12% 0%, rgba(130, 0, 12, 0.25), transparent 32%),
+                radial-gradient(circle at 100% 20%, rgba(90, 0, 0, 0.18), transparent 28%),
+                linear-gradient(135deg, #050505 0%, #0b0809 48%, #120607 100%);
         }
 
-        .container {
-            max-width: 1200px;
-            margin: auto;
-        }
-
-        h1 {
-            color: #ff3030;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            color: #aaa;
-            margin-bottom: 30px;
-        }
-
-        .panel {
-            background: #151515;
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 25px;
-        }
-
-        input {
-            width: 100%;
-            padding: 13px;
-            margin: 10px 0;
-            background: #222;
-            border: 1px solid #444;
-            border-radius: 6px;
-            color: white;
+        button, input {
+            font: inherit;
         }
 
         button {
-            padding: 10px 14px;
-            margin: 3px;
-            border: none;
-            border-radius: 5px;
+            border: 1px solid transparent;
+            border-radius: 10px;
+            padding: 10px 15px;
+            color: #fff;
+            font-weight: 600;
             cursor: pointer;
-            font-weight: bold;
-        }
-
-        .primary {
-            background: #d71920;
-            color: white;
-        }
-
-        .secondary {
-            background: #333;
-            color: white;
-        }
-
-        .success {
-            background: #176b38;
-            color: white;
-        }
-
-        .danger {
-            background: #8b2020;
-            color: white;
+            transition: transform .18s ease, background .18s ease, border-color .18s ease, opacity .18s ease;
         }
 
         button:hover {
-            opacity: 0.8;
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: .55;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .container {
+            width: min(100%, 1440px);
+            margin: 0 auto;
+        }
+
+        .brand-header {
+            margin-bottom: 26px;
+        }
+
+        .brand-name {
+            color: #fff;
+            font-family: 'Orbitron', 'Poppins', sans-serif;
+            font-size: clamp(25px, 4vw, 36px);
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .brand-name span {
+            color: var(--red-bright);
+        }
+
+        .brand-caption {
+            margin-top: 7px;
+            color: var(--muted);
+            font-size: 13px;
+            letter-spacing: .5px;
+        }
+
+        .panel {
+            padding: clamp(18px, 3vw, 28px);
+            margin-bottom: 22px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: linear-gradient(145deg, rgba(25, 25, 28, .96), rgba(12, 12, 14, .96));
+            box-shadow: var(--shadow);
+        }
+
+        #loginPanel {
+            width: min(100%, 460px);
+            margin: 8vh auto 0;
+        }
+
+        #loginPanel h2 {
+            margin-bottom: 8px;
+            font-size: 23px;
+        }
+
+        .login-description {
+            margin-bottom: 22px;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        input {
+            display: block;
+            width: 100%;
+            padding: 14px 15px;
+            margin: 12px 0;
+            border: 1px solid #33333a;
+            border-radius: 10px;
+            outline: none;
+            background: #0d0d10;
+            color: #fff;
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+
+        input:focus {
+            border-color: var(--red-bright);
+            box-shadow: 0 0 0 3px rgba(237, 28, 36, .13);
+        }
+
+        .primary {
+            background: linear-gradient(135deg, #b70d16, #f02b34);
+            color: #fff;
+        }
+
+        .secondary {
+            border-color: #38383f;
+            background: #222228;
+            color: #eee;
+        }
+
+        .success {
+            background: rgba(26, 130, 76, .18);
+            border-color: rgba(53, 208, 127, .35);
+            color: #6ce5a1;
+        }
+
+        .danger {
+            background: rgba(190, 25, 34, .17);
+            border-color: rgba(255, 59, 67, .35);
+            color: #ff777d;
+        }
+
+        .primary:hover {
+            background: linear-gradient(135deg, #d41420, #ff3b43);
+        }
+
+        .secondary:hover {
+            background: #303038;
+        }
+
+        .success:hover {
+            background: rgba(26, 130, 76, .3);
+        }
+
+        .danger:hover {
+            background: rgba(190, 25, 34, .3);
         }
 
         #dashboard {
@@ -93,87 +185,400 @@
 
         .topbar {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
             flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 18px;
+            padding: 22px 24px;
+            border: 1px solid rgba(255, 59, 67, .2);
+            border-radius: var(--radius);
+            background: linear-gradient(110deg, rgba(75, 8, 13, .42), rgba(20, 20, 23, .95) 55%);
+            box-shadow: var(--shadow);
+        }
+
+        .topbar h2 {
+            font-size: clamp(20px, 3vw, 27px);
+            font-weight: 700;
+        }
+
+        .subtitle {
+            margin-top: 5px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .topbar-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .management-navigation {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .management-tab {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 58px;
+            padding: 13px 16px;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            background: rgba(22, 22, 25, .9);
+            color: #c9c9d0;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .management-tab:hover {
+            border-color: rgba(255, 59, 67, .55);
+            color: #fff;
+        }
+
+        .management-tab.active {
+            border-color: rgba(255, 59, 67, .75);
+            background: linear-gradient(135deg, rgba(120, 8, 16, .95), rgba(48, 10, 13, .95));
+            color: #fff;
+            box-shadow: 0 8px 25px rgba(180, 0, 15, .18);
+        }
+
+        .notification-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 6px;
+            border-radius: 50px;
+            background: var(--red-bright);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 800;
+            box-shadow: 0 0 14px rgba(255, 59, 67, .28);
+        }
+
+        .notification-count[hidden] {
+            display: none !important;
+        }
+
+        .management-section {
+            display: none;
+            animation: sectionFade .22s ease;
+        }
+
+        .management-section.active {
+            display: block;
+        }
+
+        @keyframes sectionFade {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .stats {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
         }
 
         .stat {
-            flex: 1;
-            min-width: 150px;
-            background: #202020;
-            padding: 18px;
-            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            padding: 20px;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            background: linear-gradient(145deg, #1d1d21, #111114);
+        }
+
+        .stat::after {
+            position: absolute;
+            top: -28px;
+            right: -20px;
+            width: 95px;
+            height: 95px;
+            border-radius: 50%;
+            background: rgba(237, 28, 36, .09);
+            content: "";
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 12px;
         }
 
         .stat h2 {
-            color: #ff3030;
+            position: relative;
+            z-index: 1;
             margin-top: 8px;
+            color: var(--red-bright);
+            font-size: 28px;
+        }
+
+        .section-panel {
+            padding: clamp(16px, 2.5vw, 24px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            box-shadow: var(--shadow);
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .section-heading h3 {
+            font-size: 18px;
+        }
+
+        .section-heading p {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 12px;
         }
 
         .table-wrapper {
+            width: 100%;
             overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: rgba(8, 8, 10, .55);
         }
 
         table {
             width: 100%;
-            border-collapse: collapse;
             min-width: 850px;
+            border-collapse: separate;
+            border-spacing: 0;
         }
 
         th, td {
-            padding: 13px;
+            padding: 14px 13px;
+            border-bottom: 1px solid rgba(255, 255, 255, .07);
             text-align: left;
-            border-bottom: 1px solid #333;
-            font-size: 13px;
+            vertical-align: middle;
+            font-size: 12px;
+            line-height: 1.55;
         }
 
         th {
-            color: #ff5555;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #211215;
+            color: #ff777d;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .45px;
+            text-transform: uppercase;
+            white-space: nowrap;
         }
 
         td {
-            color: #ddd;
+            color: #d5d5da;
+            overflow-wrap: anywhere;
+        }
+
+        tbody tr {
+            background: rgba(255, 255, 255, .012);
+            transition: background .16s ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(237, 28, 36, .055);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: 0;
         }
 
         .status {
-            font-weight: bold;
+            font-weight: 700;
         }
 
         .limited {
-            color: #ffc107;
+            color: var(--yellow);
         }
 
         .unlimited {
-            color: #36d477;
+            color: var(--green);
         }
 
         .blocked {
-            color: #ff5555;
+            color: #ff666e;
         }
 
-        #message {
-            margin-top: 12px;
-            color: #ff7777;
-            font-size: 14px;
+        .approve-appeal-btn,
+        .reject-appeal-btn {
+            margin: 2px;
+            padding: 8px 11px;
+            font-size: 11px;
         }
 
-        @media (max-width: 600px) {
+        .approve-appeal-btn {
+            border-color: rgba(53, 208, 127, .35);
+            background: rgba(26, 130, 76, .18);
+            color: #6ce5a1;
+        }
+
+        .reject-appeal-btn {
+            border-color: rgba(255, 59, 67, .35);
+            background: rgba(190, 25, 34, .17);
+            color: #ff777d;
+        }
+
+        .appeal-status-text {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 11px;
+            border: 1px solid transparent;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .appeal-status-text.approved {
+            border-color: rgba(53, 208, 127, .22);
+            background: rgba(53, 208, 127, .1);
+            color: #65e6a0;
+        }
+
+        .appeal-status-text.rejected {
+            border-color: rgba(255, 59, 67, .22);
+            background: rgba(255, 59, 67, .1);
+            color: #ff777d;
+        }
+
+        .visitor-actions {
+            position: relative;
+            text-align: center;
+        }
+
+        .menu-toggle {
+            padding: 4px 12px;
+            border: 1px solid #393940;
+            background: #202025;
+            color: #fff;
+            font-size: 23px;
+        }
+
+        .visitor-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 5px);
+            right: 8px;
+            z-index: 1000;
+            min-width: 175px;
+            padding: 6px;
+            border: 1px solid #393940;
+            border-radius: 11px;
+            background: #17171b;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, .55);
+        }
+
+        .visitor-menu.show {
+            display: block;
+        }
+
+        .visitor-menu button {
+            display: block;
+            width: 100%;
+            margin: 2px 0;
+            border: 0;
+            background: transparent;
+            color: #eee;
+            text-align: left;
+        }
+
+        .visitor-menu button:hover {
+            background: rgba(255, 255, 255, .08);
+        }
+
+        .resume-table-controls {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 14px;
+        }
+
+        #toggleResumeRequests {
+            border: 1px solid rgba(255, 59, 67, .35);
+            background: rgba(150, 10, 20, .16);
+            color: #ff858a;
+        }
+
+        #dashboardMessage, #message {
+            min-height: 20px;
+            margin-top: 14px;
+            color: #ff858a;
+            font-size: 13px;
+        }
+
+        .dashboard-live-clock {
+            color: #c7c7ce;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: .4px;
+            text-align: right;
+        }
+
+        @media (max-width: 760px) {
             body {
-                padding: 20px 12px;
+                padding: 20px 14px;
             }
 
-            .panel {
-                padding: 16px;
+            .management-navigation {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .management-tab {
+                justify-content: space-between;
+                min-height: 50px;
+            }
+
+            .stats {
+                gap: 9px;
+            }
+
+            .stat {
+                padding: 14px;
+            }
+
+            .stat h2 {
+                font-size: 23px;
+            }
+
+            .topbar {
+                align-items: flex-start;
+                padding: 18px;
+            }
+
+            .topbar-actions {
+                width: 100%;
+            }
+
+            .topbar-actions button {
+                flex: 1;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .dashboard-live-clock {
+                text-align: left;
             }
         }
     </style>
@@ -183,12 +588,16 @@
 
 <div class="container">
 
-    <h1>JUNDY AI</h1>
-    <p class="subtitle">Administrator Control Panel</p>
+    <header class="brand-header">
+        <div class="brand-name">JUNDY <span>AI</span></div>
+        <p class="brand-caption">ADMINISTRATOR CONTROL PANEL</p>
+        <div id="philippineLiveClock" class="dashboard-live-clock"></div>
+    </header>
 
     <!-- LOGIN -->
     <section id="loginPanel" class="panel">
-        <h2>Admin Login</h2>
+        <h2>Welcome Back</h2>
+        <p class="login-description">Sign in to manage visitors, resume requests, and chatbot appeals.</p>
 
         <form id="loginForm">
             <input
@@ -220,100 +629,156 @@
 
         <div class="topbar">
             <div>
-                <h2>Visitor Management</h2>
-                <p class="subtitle">Manage JUNDY AI visitors and access.</p>
+                <h2>Admin Dashboard</h2>
+                <p class="subtitle">Manage your JUNDY AI platform from one place.</p>
             </div>
 
-            <div>
-                <button id="refreshButton" class="secondary">
-                    Refresh
-                </button>
-
-                <button id="logoutButton" class="danger">
-                    Logout
-                </button>
+            <div class="topbar-actions">
+                <button id="refreshButton" class="secondary" type="button">Refresh Data</button>
+                <button id="logoutButton" class="danger" type="button">Logout</button>
             </div>
         </div>
 
-        <div class="stats">
-            <div class="stat">
-                Total Visitors
-                <h2 id="totalVisitors">0</h2>
+        <!-- ADMIN MANAGEMENT NAVIGATION -->
+        <nav class="management-navigation" aria-label="Admin management sections">
+            <button type="button" class="management-tab active" data-section="visitorSection">
+                <span>Visitor Management</span>
+                <span class="notification-count" id="visitorNotification" hidden>0</span>
+            </button>
+
+            <button type="button" class="management-tab" data-section="resumeSection">
+                <span>Resume Requests</span>
+                <span class="notification-count" id="resumeNotification" hidden>0</span>
+            </button>
+
+            <button type="button" class="management-tab" data-section="appealSection">
+                <span>Appeal Requests</span>
+                <span class="notification-count" id="appealNotification" hidden>0</span>
+            </button>
+        </nav>
+
+        <!-- VISITOR MANAGEMENT -->
+        <section id="visitorSection" class="management-section active">
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Total Visitors</div>
+                    <h2 id="totalVisitors">0</h2>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Unlimited Access</div>
+                    <h2 id="unlimitedVisitors">0</h2>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Blocked Visitors</div>
+                    <h2 id="blockedVisitors">0</h2>
+                </div>
             </div>
 
-            <div class="stat">
-                Unlimited
-                <h2 id="unlimitedVisitors">0</h2>
+            <div class="section-panel">
+                <div class="section-heading">
+                    <div>
+                        <h3>Registered Devices</h3>
+                        <p>Review visitor activity, access levels, and abuse protection.</p>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Device Label</th>
+                                <th>Last Message Time</th>
+                                <th>Device</th>
+                                <th>Browser</th>
+                                <th>Questions Today</th>
+                                <th>Total Questions</th>
+                                <th>Access</th>
+                                <th>Status</th>
+                                <th>Abuse Protection</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="visitorTable">
+                            <tr><td colspan="10">Loading visitors...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
+        </section>
 
-            <div class="stat">
-                Blocked
-                <h2 id="blockedVisitors">0</h2>
+        <!-- RESUME REQUESTS -->
+        <section id="resumeSection" class="management-section">
+            <div class="section-panel">
+                <div class="section-heading">
+                    <div>
+                        <h3>Resume Download Requests</h3>
+                        <p>Review, approve, reject, and send resume requests.</p>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Purpose</th>
+                                <th>Status</th>
+                                <th>Request Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resumeRequestTable">
+                            <tr><td colspan="6">Loading resume requests...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="resume-table-controls">
+                    <button type="button" id="toggleResumeRequests">Show All Requests</button>
+                </div>
             </div>
-        </div>
+        </section>
 
-        <div class="panel">
-            <h3>Registered Devices</h3>
-            <br>
+        <!-- CHATBOT APPEAL REQUESTS -->
+        <section id="appealSection" class="management-section">
+            <div class="section-panel">
+                <div class="section-heading">
+                    <div>
+                        <h3>Chatbot Appeal Requests</h3>
+                        <p>Review access appeals and manage visitor reinstatement.</p>
+                    </div>
+                </div>
 
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Device Label</th>
-                            <th>Device</th>
-                            <th>Browser</th>
-                            <th>Questions Today</th>
-                            <th>Access</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-
-                    <tbody id="visitorTable">
-                        <tr>
-                            <td colspan="7">Loading visitors...</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Visitor ID</th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Reason</th>
+                                <th>Status</th>
+                                <th>Request Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appealRequestTable">
+                            <tr><td colspan="7">Loading appeal requests...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
+        </section>
 
-            <!-- RESUME DOWNLOAD REQUESTS -->
-            <div class="section-header">
-                <h2>Resume Download Requests</h2>
-            </div>
-
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Full Name</th>
-                            <th>Email</th>
-                            <th>Purpose</th>
-                            <th>Status</th>
-                            <th>Request Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-
-                    <tbody id="resumeRequestTable">
-                        <tr>
-                            <td colspan="6">Loading resume requests...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <p id="dashboardMessage"></p>
-        </div>
-
+        <p id="dashboardMessage" role="status" aria-live="polite"></p>
     </section>
 
-</div>
-
 <script>
-    const API_URL = "https://jundy-assistant-api.onrender.com";
-    //const API_URL = "http://127.0.0.1:5000";
+    const API_URL = window.location.hostname === "127.0.0.1" ||
+                window.location.hostname === "localhost"
+    ? "http://127.0.0.1:5000"
+    : "https://jundy-assistant-api.onrender.com";
 
     const loginPanel = document.getElementById("loginPanel");
     const dashboard = document.getElementById("dashboard");
@@ -328,6 +793,65 @@
             '"': "&quot;",
             "'": "&#39;"
         })[character]);
+    }
+
+    // NEW / UNCHECKED RECORD NOTIFICATIONS
+    const notificationStorageKeys = {
+        visitors: "jundy_admin_seen_visitors_v1",
+        resumes: "jundy_admin_seen_resumes_v1",
+        appeals: "jundy_admin_seen_appeals_v1"
+    };
+
+    let cachedVisitors = [];
+    let cachedResumeRequests = [];
+    let cachedAppeals = [];
+
+    function getSeenIds(storageKey) {
+        try {
+            const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
+            return Array.isArray(saved) ? saved.map(String) : [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function updateNotificationBadge(elementId, records, idField, storageKey) {
+        const badge = document.getElementById(elementId);
+        if (!badge) return;
+
+        const recordIds = records
+            .map(record => String(record[idField]))
+            .filter(id => id && id !== "undefined" && id !== "null");
+
+        // On first use, mark existing records as already seen.
+        if (localStorage.getItem(storageKey) === null) {
+            localStorage.setItem(storageKey, JSON.stringify(recordIds));
+            badge.textContent = "0";
+            badge.hidden = true;
+            return;
+        }
+
+        const seenIds = new Set(getSeenIds(storageKey));
+        const unseenCount = recordIds.filter(id => !seenIds.has(id)).length;
+
+        badge.textContent = unseenCount > 99 ? "99+" : String(unseenCount);
+        badge.hidden = unseenCount === 0;
+    }
+
+    function markNotificationsSeen(records, idField, storageKey, badgeId) {
+        const existingIds = getSeenIds(storageKey);
+        const currentIds = records
+            .map(record => String(record[idField]))
+            .filter(id => id && id !== "undefined" && id !== "null");
+
+        const mergedIds = [...new Set([...existingIds, ...currentIds])];
+        localStorage.setItem(storageKey, JSON.stringify(mergedIds));
+
+        const badge = document.getElementById(badgeId);
+        if (badge) {
+            badge.textContent = "0";
+            badge.hidden = true;
+        }
     }
 
     async function apiRequest(path, options = {}) {
@@ -368,7 +892,14 @@
         try {
             const result = await apiRequest("/admin/visitors");
 
-            const visitors = result.visitors;
+            const visitors = result.visitors || [];
+            cachedVisitors = visitors;
+            updateNotificationBadge(
+                "visitorNotification",
+                cachedVisitors,
+                "visitor_id",
+                notificationStorageKeys.visitors
+            );
 
             document.getElementById("totalVisitors").textContent =
                 visitors.length;
@@ -382,7 +913,7 @@
             if (visitors.length === 0) {
                 table.innerHTML = `
                     <tr>
-                        <td colspan="7">No visitors registered yet.</td>
+                        <td colspan="10">No visitors registered yet.</td>
                     </tr>
                 `;
                 dashboardMessage.textContent = "";
@@ -398,12 +929,27 @@
                 return `
                     <tr>
                         <td>${escapeHTML(visitor.device_label || "Unnamed Device")}</td>
+                        <td>
+                            ${visitor.last_seen
+                                ? new Date(new Date(visitor.last_seen).getTime() + (8 * 60 * 60 * 1000)).toLocaleString("en-PH", {
+                                    timeZone: "Asia/Manila",
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "2-digit",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                    hour12: true
+                                })
+                                : "N/A"}
+                        </td>
 
                         <td>${escapeHTML(visitor.device_name)}</td>
 
                         <td>${escapeHTML(visitor.browser_name)}</td>
 
                         <td>${escapeHTML(visitor.questions_today)}</td>
+                        <td>${escapeHTML(visitor.total_questions ?? 0)}</td>
 
                         <td class="status ${accessClass}">
                             ${escapeHTML(visitor.access_type)}
@@ -414,30 +960,53 @@
                         </td>
 
                         <td>
+                            ${visitor.auto_blocked
+                                ? `<span class="status blocked">Auto-Blocked</span>`
+                                : `<span class="status unlimited">Not Blocked</span>`
+                            }
+                            <br>
+                            Abuse Count: ${escapeHTML(visitor.abuse_count ?? 0)}/2
+                            ${visitor.auto_blocked_until
+                                ? `<br>Until: ${new Date(visitor.auto_blocked_until).toLocaleString("en-PH")}`
+                                : ""
+                            }
+                        </td>
+
+                        <td class="visitor-actions">
                             <button
-                                class="secondary"
-                                data-action="rename"
-                                data-id="${escapeHTML(visitor.visitor_id)}">
-                                Rename
+                                class="menu-toggle"
+                                type="button"
+                                aria-label="Visitor options"
+                                title="Visitor options">
+                                ⋮
                             </button>
 
-                            <button
-                                class="success"
-                                data-action="access"
-                                data-id="${escapeHTML(visitor.visitor_id)}"
-                                data-type="${visitor.access_type === "unlimited" ? "limited" : "unlimited"}"
-                                data-blocked="false">
-                                ${visitor.access_type === "unlimited" ? "Revoke Unlimited" : "Grant Unlimited"}
-                            </button>
+                            <div class="visitor-menu">
+                                <button
+                                    type="button"
+                                    data-action="rename"
+                                    data-id="${escapeHTML(visitor.visitor_id)}">
+                                    Rename
+                                </button>
 
-                            <button
-                                class="danger"
-                                data-action="access"
-                                data-id="${escapeHTML(visitor.visitor_id)}"
-                                data-type="${escapeHTML(visitor.access_type)}"
-                                data-blocked="${visitor.is_blocked ? "false" : "true"}">
-                                ${visitor.is_blocked ? "Unblock" : "Block"}
-                            </button>
+                                <button
+                                    type="button"
+                                    data-action="access"
+                                    data-id="${escapeHTML(visitor.visitor_id)}"
+                                    data-type="${visitor.access_type === "unlimited" ? "limited" : "unlimited"}"
+                                    data-blocked="false">
+                                    ${visitor.access_type === "unlimited" ? "Revoke Unlimited" : "Grant Unlimited"}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    data-action="access"
+                                    data-id="${escapeHTML(visitor.visitor_id)}"
+                                    data-type="${escapeHTML(visitor.access_type)}"
+                                    data-blocked="${visitor.is_blocked ? "false" : "true"}">
+                                    ${visitor.is_blocked ? "Unblock" : "Block"}
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -453,6 +1022,13 @@
             dashboardMessage.textContent = error.message;
         }
     }
+
+    let showAllResumeRequests = false;
+
+    document.getElementById("toggleResumeRequests").addEventListener("click", function () {
+        showAllResumeRequests = !showAllResumeRequests;
+        loadResumeRequests();
+    });
 
     // LOAD RESUME DOWNLOAD REQUESTS
     async function loadResumeRequests() {
@@ -470,8 +1046,28 @@
         try {
             const result = await apiRequest("/admin/resume-requests");
 
-            const requests = result.requests;
+            const allRequests = result.requests || [];
+            cachedResumeRequests = allRequests;
+            updateNotificationBadge(
+                "resumeNotification",
+                cachedResumeRequests,
+                "id",
+                notificationStorageKeys.resumes
+            );
+
+            const requests = showAllResumeRequests
+                ? allRequests
+                : allRequests.slice(0, 10);
             
+            const toggleButton = document.getElementById("toggleResumeRequests");
+
+            if (toggleButton) {
+                toggleButton.style.display = allRequests.length > 10 ? "inline-block" : "none";
+                toggleButton.textContent = showAllResumeRequests
+                    ? "Show Less"
+                    : "Show All Requests";
+            }
+
 
             if (requests.length === 0) {
                 table.innerHTML = `
@@ -489,10 +1085,35 @@
                 <td>${escapeHTML(item.full_name)}</td>
                 <td>${escapeHTML(item.email)}</td>
                 <td>${escapeHTML(item.purpose)}</td>
-                <td>${escapeHTML(item.status)}</td>
+                <td>
+                    <span style="
+                        display: inline-block;
+                        padding: 5px 12px;
+                        border-radius: 20px;
+                        font-weight: bold;
+                        text-transform: capitalize;
+                        color: ${item.status === "pending" ? "#facc15" :
+                                item.status === "approved" ? "#22c55e" :
+                                item.status === "rejected" ? "#ef4444" : "#ffffff"};
+                        background: ${item.status === "pending" ? "rgba(250,204,21,0.15)" :
+                                    item.status === "approved" ? "rgba(34,197,94,0.15)" :
+                                    item.status === "rejected" ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.1)"};
+                    ">
+                        ${escapeHTML(item.status)}
+                    </span>
+                </td>
                 <td>
                     ${item.request_date
-                        ? new Date(item.request_date).toLocaleString()
+                        ? new Date(new Date(item.request_date).getTime() + (8 * 60 * 60 * 1000)).toLocaleString("en-PH", {
+                            timeZone: "Asia/Manila",
+                            year: "numeric",
+                            month: "short",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                            hour12: true
+                        })
                         : "N/A"}
                 </td>
                 <td>
@@ -544,6 +1165,137 @@
         }
     }
 
+    // LOAD CHATBOT APPEAL REQUESTS
+async function loadAppealRequests() {
+
+    const table = document.getElementById("appealRequestTable");
+
+    if (!table) return;
+
+    table.innerHTML = `
+        <tr>
+            <td colspan="7">Loading appeal requests...</td>
+        </tr>
+    `;
+
+    try {
+        const result = await apiRequest("/admin/appeals");
+
+        const appeals = result.appeals || [];
+        cachedAppeals = appeals;
+        updateNotificationBadge(
+            "appealNotification",
+            cachedAppeals,
+            "id",
+            notificationStorageKeys.appeals
+        );
+
+        if (appeals.length === 0) {
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7">No appeal requests yet.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        table.innerHTML = appeals.map(item => `
+            <tr>
+                <td>${escapeHTML(item.visitor_id)}</td>
+                <td>${escapeHTML(item.full_name)}</td>
+                <td>${escapeHTML(item.email)}</td>
+                <td>${escapeHTML(item.reason)}</td>
+                <td>${escapeHTML(item.status)}</td>
+                <td>
+                    ${item.created_at
+                        ? new Date(item.created_at).toLocaleString("en-PH", {
+                            timeZone: "Asia/Manila",
+                            year: "numeric",
+                            month: "short",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true
+                        })
+                        : "N/A"}
+                </td>
+                <td>
+                    ${item.status === "Pending" ? `
+                        <button type="button"
+                            class="approve-appeal-btn"
+                            data-id="${item.id}">
+                            Approve
+                        </button>
+
+                        <button type="button"
+                            class="reject-appeal-btn"
+                            data-id="${item.id}">
+                            Reject
+                        </button>
+                    ` : `
+                        <span class="appeal-status-text ${item.status.toLowerCase()}">
+                            ${escapeHTML(item.status)}
+                        </span>
+                    `}
+                </td>
+            </tr>
+        `).join("");
+
+    } catch (error) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="7">${escapeHTML(error.message)}</td>
+            </tr>
+        `;
+    }
+}
+
+// UPDATE APPEAL STATUS
+async function updateAppealStatus(appealId, status) {
+
+    try {
+        const result = await apiRequest(
+            `/admin/appeals/${appealId}/status`,
+            {
+                method: "PUT",
+                body: JSON.stringify({
+                    status: status
+                })
+            }
+        );
+
+        alert(result.message);
+
+        await loadAppealRequests();
+
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+// APPEAL ACTION BUTTONS
+document.addEventListener("click", function (event) {
+
+    const approveButton = event.target.closest(".approve-appeal-btn");
+    const rejectButton = event.target.closest(".reject-appeal-btn");
+
+    if (approveButton) {
+        const appealId = approveButton.dataset.id;
+
+        if (confirm("Are you sure you want to approve this appeal?")) {
+            updateAppealStatus(appealId, "Approved");
+        }
+    }
+
+    if (rejectButton) {
+        const appealId = rejectButton.dataset.id;
+
+        if (confirm("Are you sure you want to reject this appeal?")) {
+            updateAppealStatus(appealId, "Rejected");
+        }
+    }
+});
+
     loginForm.addEventListener("submit", async function(event) {
         event.preventDefault();
 
@@ -563,6 +1315,8 @@
 
             showDashboard();
             await loadVisitors();
+            await loadResumeRequests();
+            await loadAppealRequests();
 
         } catch (error) {
             message.textContent = error.message;
@@ -572,6 +1326,7 @@
     document.getElementById("refreshButton").addEventListener("click", async function() {
         await loadVisitors();
         await loadResumeRequests();
+        await loadAppealRequests();
     });
 
     document.getElementById("logoutButton").addEventListener("click", async function() {
@@ -588,11 +1343,29 @@
     });
 
     document.getElementById("visitorTable").addEventListener("click", async function(event) {
+
+        // Handle three-dot menu
+        const menuToggle = event.target.closest(".menu-toggle");
+
+        if (menuToggle) {
+            const currentMenu = menuToggle.nextElementSibling;
+
+            document.querySelectorAll(".visitor-menu.show").forEach(menu => {
+                if (menu !== currentMenu) {
+                    menu.classList.remove("show");
+                }
+            });
+
+            currentMenu.classList.toggle("show");
+            return;
+        }
+
         const button = event.target.closest("button[data-action]");
 
         if (!button) return;
 
         const visitorId = button.dataset.id;
+        button.closest(".visitor-menu")?.classList.remove("show");
 
         try {
             if (button.dataset.action === "rename") {
@@ -697,6 +1470,16 @@
     });
 
 
+    // Close visitor menus when clicking outside
+    document.addEventListener("click", function(event) {
+        if (!event.target.closest(".visitor-actions")) {
+            document.querySelectorAll(".visitor-menu.show").forEach(menu => {
+                menu.classList.remove("show");
+            });
+        }
+    });
+
+
     document.getElementById("resumeRequestTable").addEventListener("click", async function(event) {
         const button = event.target.closest("button[data-action]");
 
@@ -756,12 +1539,82 @@
             showDashboard();
             await loadVisitors();
             await loadResumeRequests();
+            await loadAppealRequests();
         } catch (error) {
             showLogin();
         }
     }
 
+    // ADMIN MANAGEMENT NAVIGATION
+    document.querySelectorAll(".management-tab").forEach(tab => {
+        tab.addEventListener("click", async function () {
+            const targetSection = this.dataset.section;
+
+            document.querySelectorAll(".management-section").forEach(section => {
+                section.classList.remove("active");
+            });
+
+            document.querySelectorAll(".management-tab").forEach(button => {
+                button.classList.remove("active");
+            });
+
+            const selectedSection = document.getElementById(targetSection);
+            if (!selectedSection) return;
+
+            selectedSection.classList.add("active");
+            this.classList.add("active");
+
+            // Refresh the selected table, then mark its current records as seen.
+            if (targetSection === "visitorSection") {
+                await loadVisitors();
+                markNotificationsSeen(
+                    cachedVisitors,
+                    "visitor_id",
+                    notificationStorageKeys.visitors,
+                    "visitorNotification"
+                );
+            } else if (targetSection === "resumeSection") {
+                await loadResumeRequests();
+                markNotificationsSeen(
+                    cachedResumeRequests,
+                    "id",
+                    notificationStorageKeys.resumes,
+                    "resumeNotification"
+                );
+            } else if (targetSection === "appealSection") {
+                await loadAppealRequests();
+                markNotificationsSeen(
+                    cachedAppeals,
+                    "id",
+                    notificationStorageKeys.appeals,
+                    "appealNotification"
+                );
+            }
+        });
+    });
+
     checkAdminSession();
+
+function updatePhilippineClock() {
+    const clock = document.getElementById("philippineLiveClock");
+
+    if (!clock) return;
+
+    clock.textContent = new Intl.DateTimeFormat("en-PH", {
+        timeZone: "Asia/Manila",
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+    }).format(new Date());
+}
+
+updatePhilippineClock();
+setInterval(updatePhilippineClock, 1000);
 </script>
 
 </body>

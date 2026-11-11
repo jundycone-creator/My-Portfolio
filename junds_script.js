@@ -860,7 +860,10 @@ document.addEventListener("DOMContentLoaded", function () {
             try {
 
                 const response = await fetch(
-                    "https://jundy-assistant-api.onrender.com/resume/request",
+                    `${window.location.hostname === "127.0.0.1" ||
+                    window.location.hostname === "localhost"
+                        ? "http://127.0.0.1:5000"
+                        : "https://jundy-assistant-api.onrender.com"}/appeal`,
                     {
                         method: "POST",
                         headers: {
@@ -983,6 +986,101 @@ document.addEventListener("DOMContentLoaded", function () {
 
     });
 
+        // APPEAL REQUEST MODAL
+    const appealButton = document.querySelector(".blocked-appeal-button");
+    const appealRequestOverlay = document.getElementById("appealRequestOverlay");
+    const closeAppealRequest = document.getElementById("closeAppealRequest");
+    const cancelAppealRequest = document.getElementById("cancelAppealRequest");
+    const appealRequestForm = document.getElementById("appealRequestForm");
+    const appealRequestMessage = document.getElementById("appealRequestMessage");
+    const submitAppealRequest = document.getElementById("submitAppealRequest");
+
+    if (appealRequestForm) {
+
+        appealRequestForm.addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const fullName = document.getElementById("appealFullName").value.trim();
+            const email = document.getElementById("appealEmail").value.trim();
+            const reason = document.getElementById("appealReason").value.trim();
+
+            const visitorId = getVisitorId();
+
+            appealRequestMessage.textContent = "Submitting your appeal...";
+            submitAppealRequest.disabled = true;
+
+            try {
+                const response = await fetch(
+                    `${API_URL}/appeal`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            visitor_id: visitorId,
+                            full_name: fullName,
+                            email: email,
+                            reason: reason
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || "Appeal submission failed.");
+                }
+
+                appealRequestMessage.textContent = data.message;
+
+                appealRequestForm.reset();
+
+                setTimeout(function () {
+                    appealRequestOverlay.classList.remove("show");
+                }, 1500);
+
+                // Automatically close the appeal form after successful submission
+                setTimeout(() => {
+                    const appealOverlay = document.getElementById("appealRequestOverlay");
+
+                    if (appealOverlay) {
+                        appealOverlay.classList.remove("active");
+                    }
+                }, 1500);
+
+            } catch (error) {
+                console.error("APPEAL SUBMISSION ERROR:", error);
+                appealRequestMessage.textContent = error.message;
+
+            } finally {
+                submitAppealRequest.disabled = false;
+            }
+        });
+
+    }
+
+    if (appealButton && appealRequestOverlay) {
+
+        appealButton.addEventListener("click", function (event) {
+            event.preventDefault();
+            appealRequestOverlay.classList.add("show");
+        });
+
+    }
+
+    if (closeAppealRequest && appealRequestOverlay) {
+        closeAppealRequest.addEventListener("click", function () {
+            appealRequestOverlay.classList.remove("show");
+        });
+    }
+
+    if (cancelAppealRequest && appealRequestOverlay) {
+        cancelAppealRequest.addEventListener("click", function () {
+            appealRequestOverlay.classList.remove("show");
+        });
+    }
+
 
     // CLOSE CHATBOT
     if (closeButton) {
@@ -996,7 +1094,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // ADD CHAT MESSAGE
 // ===============================
 
-  
+
 function addChatMessage(message, sender) {
 
     const messageElement = document.createElement("div");
@@ -1065,43 +1163,21 @@ function addChatMessage(message, sender) {
 }
 
 
-    
+
     // ==========================================
     // GEMINI AI CHATBOT RESPONSE
     // ==========================================
 
-    
-    async function getChatbotResponse(message) {
 
+    async function getChatbotResponse(message) {
         const text = message.toLowerCase();
 
-        // KEEP GOOGLE MAPS FUNCTIONALITY
-        if (
-            text.includes("location") ||
-            text.includes("where") ||
-            text.includes("address") ||
-            text.includes("map")
-        ) {
-            return "You can find Jundytech Solutions here: https://www.google.com/maps/search/?api=1&query=Jundytech+Solutions";
-        }
 
-        // GET OR CREATE A UNIQUE VISITOR ID
-        function getVisitorId() {
-            let visitorId = localStorage.getItem("jundy_ai_visitor_id");
-
-            if (!visitorId) {
-                visitorId = crypto.randomUUID();
-                localStorage.setItem("jundy_ai_visitor_id", visitorId);
-            }
-
-            return visitorId;
-        }
 
         try {
             // CONNECT TO JUNDY ASSISTANT BACKEND
             const response = await fetch(
-                "https://jundy-assistant-api.onrender.com/chat",
-                //"http://127.0.0.1:5000/chat",
+                `${API_URL}/chat`,
                 {
                     method: "POST",
                     headers: {
@@ -1134,10 +1210,16 @@ function addChatMessage(message, sender) {
             console.log("BACKEND DATA:", data);
 
             if (response.status === 429 && data.error === "daily_limit_reached") {
-            const error = new Error(data.message);
-            error.code = "DAILY_LIMIT_REACHED";
-            error.limitData = data;
-            throw error;
+                const error = new Error(data.message);
+                error.code = "DAILY_LIMIT_REACHED";
+                error.limitData = data;
+                throw error;
+            }
+
+            if (response.status === 403 && data.error === "visitor_blocked") {
+                const error = new Error(data.message);
+                error.code = "VISITOR_BLOCKED";
+                throw error;
             }
 
             if (!response.ok) {
@@ -1148,7 +1230,10 @@ function addChatMessage(message, sender) {
                 throw new Error("Backend returned an empty AI reply.");
             }
 
-            return data.reply;
+            return {
+                reply: data.reply,
+                warning: data.warning
+            };
 
         } catch (error) {
             console.error("JUNDY ASSISTANT ERROR:", error);
@@ -1161,9 +1246,22 @@ function addChatMessage(message, sender) {
         }
     }
 
+    // GET OR CREATE A UNIQUE VISITOR ID
+        function getVisitorId() {
+            let visitorId = localStorage.getItem("jundy_ai_visitor_id");
+
+            if (!visitorId) {
+                visitorId = crypto.randomUUID();
+                localStorage.setItem("jundy_ai_visitor_id", visitorId);
+            }
+
+            console.log("Current Visitor ID:", visitorId);
+            return visitorId;
+        }
 
 
-    
+
+
     // STORE CHAT CONVERSATION
     let conversationHistory = [];
 
@@ -1186,7 +1284,8 @@ function addChatMessage(message, sender) {
         try {
 
             // GET AI RESPONSE
-            const response = await getChatbotResponse(message);
+            const responseData = await getChatbotResponse(message);
+            const response = responseData.reply;
 
             // SAVE CONVERSATION
             conversationHistory.push({
@@ -1202,11 +1301,20 @@ function addChatMessage(message, sender) {
             // DISPLAY AI RESPONSE
             addChatMessage(response, "bot");
 
+            // DISPLAY ABUSE WARNING
+            if (responseData.warning) {
+                addChatMessage(responseData.warning, "bot");
+            }
+
         } catch (error) {
 
             console.error("AI Chatbot Error:", error);
 
-            if (error.code === "DAILY_LIMIT_REACHED") {
+            if (error.code === "VISITOR_BLOCKED") {
+
+                showBlockedScreen();
+
+            } else if (error.code === "DAILY_LIMIT_REACHED") {
 
                 showDailyLimitPopup();
 
@@ -1219,6 +1327,31 @@ function addChatMessage(message, sender) {
 
             }
 
+        }
+    }
+
+    function showBlockedScreen() {
+
+        const blockedScreen = document.getElementById("blockedAccessScreen");
+        const messages = document.getElementById("chatbotMessages");
+        const quickQuestions = document.querySelector(".chatbot-quick-questions");
+        const inputArea = document.querySelector(".chatbot-input-area");
+        const input = document.getElementById("chatbotInput");
+        const sendButton = document.getElementById("chatbotSend");
+
+        if (blockedScreen) blockedScreen.style.display = "flex";
+        if (messages) messages.style.display = "none";
+        if (quickQuestions) quickQuestions.style.display = "none";
+        if (inputArea) inputArea.style.display = "none";
+
+        if (input) input.disabled = true;
+        if (sendButton) sendButton.disabled = true;
+
+        const status = document.querySelector(".chatbot-header .chatbot-title span");
+
+        if (status) {
+            status.textContent = "● Access Restricted";
+            status.style.color = "#ef4444";
         }
     }
 
@@ -1289,7 +1422,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const resumePreviewOverlay = document.getElementById("resumePreviewOverlay");
     const closeResumePreview = document.getElementById("closeResumePreview");
 
-    
+
     // GET IN TOUCH FUNCTION
     if (getInTouchButton && viewResumeButton && profilePicture) {
 

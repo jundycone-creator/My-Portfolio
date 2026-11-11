@@ -18,13 +18,13 @@
     <!-- CSS -->
     <link rel="stylesheet" href="Mydesign.css">
 
-    
+
 
 </head>
 
 <body>
 
-    
+
 <header class="header">
 
     <h1 class="logo" id="portfoliologo_clickable">
@@ -74,7 +74,7 @@
                      alt="Jundy Gagu profile picture"
                      class="profile-picture profile-blurred">
 
-                
+
                 <div class="picture-overlay">
 
                     <button type="button"
@@ -105,9 +105,9 @@
                     <p>IT Support</p>
                     <p>Computer Technician</p>
                 </div>
-            
+
                 <!-- HOME ACTION BUTTONS -->
-            
+
             <div class="home-buttons">
 
                 <button type="button"
@@ -232,7 +232,7 @@
                     <img src="PICS/EXPERIENCE PICS/DEEPCLEANING.jpg"
                          alt="PC Maintenance" class="zoomable-image">
                 </div>
-                
+
 
             </div>
         </div>
@@ -363,7 +363,7 @@
 
 <!-- MY SKILLS -->
 
-        
+
 <section class="skills" id="skills">
     <h2>My Skills</h2>
     <p class="skills-intro">Explore my technical skills and hands-on experience.</p>
@@ -405,7 +405,7 @@
         <div class="skill-details" id="skillDetails">
 
             <!-- HARDWARE -->
-            
+
             <div class="skill-content" id="hardware">
 
                 <h3>Hardware Support</h3>
@@ -591,7 +591,7 @@
                         class="zoomable-image">
                 </div>
                 </div>
-                
+
             </div>
         </div>
 
@@ -761,7 +761,7 @@
     <footer class="footer">
         <p>&copy; 2026 Jundy Gagu. All Rights Reserved.</p>
     </footer>
-    
+
     <!-- IMAGE LIGHTBOX -->
     <div class="image-lightbox" id="imageLightbox">
 
@@ -783,8 +783,8 @@
 
     </div>
 
-    
-        
+
+
         <!-- CHATBOT -->
         <div class="chatbot-container" id="chatbotContainer">
 
@@ -823,6 +823,43 @@
                         I'm Jundy's virtual assistant.
                         How can I help you today?
                     </div>
+                </div>
+
+                <!-- BLOCKED ACCESS SCREEN -->
+                <div class="blocked-access-screen" id="blockedAccessScreen" style="display: none;">
+
+                    <div class="blocked-icon">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+
+                    <h2>Access Restricted</h2>
+
+                    <p class="blocked-description">
+                        Your access to this chatbot has been blocked.
+                    </p>
+
+                    <div class="blocked-status">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>Chatbot access is currently unavailable.</span>
+                        <strong>BLOCKED</strong>
+                    </div>
+
+
+                        <p class="blocked-contact">
+                            If you believe this is a mistake, please contact the administrator for assistance.
+                        </p>
+
+                        <a
+                            href="https://mail.google.com/mail/?view=cm&fs=1&su=Chatbot%20Access%20Appeal&body=Hello%20Administrator%2C%0A%0AI%20would%20like%20to%20appeal%20my%20chatbot%20access%20restriction.%20Please%20review%20my%20access.%0A%0AThank%20you."
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="blocked-appeal-button"
+                        >
+                            <i class="fa-solid fa-envelope"></i>
+                            Appeal via Gmail
+                        </a>
+
+
                 </div>
 
                 <!-- QUICK QUESTIONS -->
@@ -977,6 +1014,68 @@
             </div>
 
         </div>
+
+
+        <!-- APPEAL REQUEST FORM -->
+        <div class="resume-request-overlay" id="appealRequestOverlay">
+
+            <div class="resume-request-container">
+
+                <div class="resume-request-header">
+                    <div>
+                        <span class="resume-request-label">ACCESS APPEAL</span>
+                        <h2>Request Access Review</h2>
+                        <p>Please provide your details so the administrator can review your appeal.</p>
+                    </div>
+
+                    <button type="button" id="closeAppealRequest"
+                            aria-label="Close appeal form">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <form id="appealRequestForm">
+
+                    <div class="resume-form-group">
+                        <label for="appealFullName">Full Name</label>
+                        <input type="text" id="appealFullName"
+                            placeholder="Enter your full name"
+                            required maxlength="150">
+                    </div>
+
+                    <div class="resume-form-group">
+                        <label for="appealEmail">Gmail / Email Address</label>
+                        <input type="email" id="appealEmail"
+                            placeholder="example@gmail.com"
+                            required maxlength="150">
+                    </div>
+
+                    <div class="resume-form-group">
+                        <label for="appealReason">Reason for Appeal</label>
+                        <textarea id="appealReason"
+                            placeholder="Explain why you believe your chatbot access should be restored..."
+                            rows="4" required></textarea>
+                    </div>
+
+                    <p id="appealRequestMessage"></p>
+
+                    <div class="resume-request-actions">
+                        <button type="button" id="cancelAppealRequest">
+                            Cancel
+                        </button>
+
+                        <button type="submit" id="submitAppealRequest">
+                            <i class="fa-solid fa-paper-plane"></i>
+                            Submit Appeal
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
 
 
         <!-- JAVASCRIPT -->

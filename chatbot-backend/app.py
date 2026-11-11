@@ -87,6 +87,22 @@ class VisitorUsage(db.Model):
         ),
     )
 
+class AppealRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    visitor_id = db.Column(db.String(64), nullable=False)
+    full_name = db.Column(db.String(150), nullable=False)
+    email = db.Column(db.String(150), nullable=False)
+    reason = db.Column(db.Text, nullable=False)
+    status = db.Column(
+        db.String(20),
+        default="Pending",
+        nullable=False
+    )
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(PHILIPPINE_TIMEZONE)
+    )
+
 class ResumeDownloadRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(150), nullable=False)
@@ -121,6 +137,22 @@ class VisitorAccess(db.Model):
         nullable=False
     )
     is_blocked = db.Column(db.Boolean, default=False, nullable=False)
+    # AUTOMATIC ABUSE PROTECTION
+    auto_blocked_until = db.Column(
+        db.DateTime(timezone=True),
+        nullable=True
+    )
+
+    irrelevant_count = db.Column(
+        db.Integer,
+        default=0,
+        nullable=False
+    )
+
+    last_irrelevant_at = db.Column(
+        db.DateTime(timezone=True),
+        nullable=True
+    )
     first_seen = db.Column(
         db.DateTime,
         default=lambda: datetime.now(PHILIPPINE_TIMEZONE)
@@ -131,15 +163,72 @@ class VisitorAccess(db.Model):
         onupdate=lambda: datetime.now(PHILIPPINE_TIMEZONE)
     )
 
+def is_abusive_message(message):
 
-def record_visitor_question(visitor_id, device_name=None, browser_name=None):
+    try:
+        moderation = client.chat.completions.create(
+            model="openai/gpt-oss-20b",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """
+                    You are a chatbot safety classifier.
+
+                    Classify the user's message as ABUSIVE or SAFE.
+
+                    ABUSIVE includes:
+                    - Sexually explicit or inappropriate messages directed
+                      at the chatbot owner.
+                    - Personal insults, harassment, or humiliation.
+                    - Messages intentionally mocking or degrading
+                      the owner's personality.
+
+                    SAFE includes:
+                    - Greetings and casual conversation.
+                    - General or unrelated questions.
+                    - Respectful jokes.
+                    - Constructive criticism and disagreement.
+                    - Neutral discussions of sensitive topics.
+                    - Quoted or educational content.
+
+                    When uncertain, classify as SAFE.
+
+                    Reply with only ABUSIVE or SAFE.
+                    """
+                },
+                {
+                    "role": "user",
+                    "content": message[:1000]
+                }
+            ],
+            temperature=0,
+            max_completion_tokens=200
+        )
+
+        result = moderation.choices[0].message.content.strip().upper()
+        print("ABUSE CLASSIFIER RESULT:", result)
+
+        return result == "ABUSIVE"
+
+    except Exception as e:
+        print("ABUSE DETECTION ERROR:", str(e))
+        return False
+
+
+def record_visitor_question(
+    visitor_id,
+    device_name=None,
+    browser_name=None,
+    message=None
+):
     today = datetime.now(PHILIPPINE_TIMEZONE).date()
     now = datetime.now(PHILIPPINE_TIMEZONE)
+
     device_name = (device_name or "Unknown Device")[:100]
     browser_name = (browser_name or "Unknown Browser")[:100]
 
     try:
-        # Register the visitor if they do not exist yet.
+        # REGISTER VISITOR
         statement = insert(VisitorAccess).values(
             visitor_id=visitor_id,
             device_name=device_name,
@@ -155,30 +244,84 @@ def record_visitor_question(visitor_id, device_name=None, browser_name=None):
 
         db.session.execute(statement)
 
-        # Retrieve and lock the visitor's access record.
+        # GET AND LOCK VISITOR RECORD
         visitor = VisitorAccess.query.filter_by(
             visitor_id=visitor_id
         ).with_for_update().first()
 
         visitor.last_seen = now
+        visitor.device_name = device_name
+        visitor.browser_name = browser_name
 
-        if device_name:
-            visitor.device_name = device_name
-
-        if browser_name:
-            visitor.browser_name = browser_name
-
-        # Check whether the visitor is blocked.
+        # PERMANENT ADMIN BLOCK
         if visitor.is_blocked:
             db.session.commit()
 
             return {
                 "blocked": True,
                 "access_type": visitor.access_type,
-                "used": 0
+                "used": 0,
+                "warning": None
             }
 
-        # Count questions for both limited and unlimited visitors.
+        # AUTOMATIC BLOCK CHECK
+        if visitor.auto_blocked_until:
+
+            if visitor.auto_blocked_until > now:
+                db.session.commit()
+
+                return {
+                    "blocked": True,
+                    "access_type": visitor.access_type,
+                    "used": 0,
+                    "warning": None
+                }
+
+            # AUTOMATIC BLOCK HAS EXPIRED
+            visitor.auto_blocked_until = None
+            visitor.irrelevant_count = 0
+            visitor.last_irrelevant_at = None
+
+        warning = None
+
+        # RESET ABUSE COUNTER AFTER 24 HOURS
+        if (
+            visitor.last_irrelevant_at and
+            now - visitor.last_irrelevant_at >= timedelta(hours=24)
+        ):
+            visitor.irrelevant_count = 0
+            visitor.last_irrelevant_at = None
+
+        # CHECK FOR ABUSIVE MESSAGE
+        if message and is_abusive_message(message):
+
+            visitor.irrelevant_count += 1
+            print("ABUSE COUNT:", visitor.irrelevant_count)
+            visitor.last_irrelevant_at = now
+
+            if visitor.irrelevant_count >= 3:
+
+                visitor.auto_blocked_until = (
+                    now + timedelta(minutes=15)
+                )
+
+                db.session.commit()
+
+                return {
+                    "blocked": True,
+                    "access_type": visitor.access_type,
+                    "used": 0,
+                    "warning": None
+                }
+
+            warning = (
+                f"Warning {visitor.irrelevant_count}/2: "
+                "Please keep the conversation respectful. "
+                "Repeated abusive messages will result in "
+                "a temporary 15-minute block."
+            )
+
+        # COUNT DAILY QUESTIONS
         usage_statement = insert(VisitorUsage).values(
             visitor_id=visitor_id,
             usage_date=today,
@@ -206,12 +349,14 @@ def record_visitor_question(visitor_id, device_name=None, browser_name=None):
         return {
             "blocked": False,
             "access_type": visitor.access_type,
-            "used": used_questions
+            "used": used_questions,
+            "warning": warning
         }
 
     except Exception:
         db.session.rollback()
         raise
+
 
 CORS(
     app,
@@ -426,15 +571,30 @@ def admin_logout():
     })
 
 
+
 @app.route("/admin/visitors", methods=["GET"])
 @admin_required
 def admin_visitors():
 
     today = datetime.now(PHILIPPINE_TIMEZONE).date()
+    now = datetime.now(PHILIPPINE_TIMEZONE)
 
     visitors = VisitorAccess.query.order_by(
         VisitorAccess.last_seen.desc()
     ).all()
+
+    # CALCULATE TOTAL QUESTIONS PER VISITOR
+    total_usage_rows = db.session.query(
+        VisitorUsage.visitor_id,
+        db.func.sum(VisitorUsage.question_count).label("total_questions")
+    ).group_by(
+        VisitorUsage.visitor_id
+    ).all()
+
+    total_questions_by_visitor = {
+        row.visitor_id: int(row.total_questions or 0)
+        for row in total_usage_rows
+    }
 
     visitor_list = []
 
@@ -452,7 +612,19 @@ def admin_visitors():
             "browser_name": visitor.browser_name,
             "access_type": visitor.access_type,
             "is_blocked": visitor.is_blocked,
+            "abuse_count": visitor.irrelevant_count,
+            "auto_blocked": (
+                visitor.auto_blocked_until is not None and
+                visitor.auto_blocked_until > now
+            ),
+            "auto_blocked_until": (
+                visitor.auto_blocked_until.isoformat()
+                if visitor.auto_blocked_until else None
+            ),
             "questions_today": usage.question_count if usage else 0,
+            "total_questions": total_questions_by_visitor.get(
+                visitor.visitor_id, 0
+            ),
             "first_seen": visitor.first_seen.isoformat() if visitor.first_seen else None,
             "last_seen": visitor.last_seen.isoformat() if visitor.last_seen else None
         })
@@ -463,6 +635,77 @@ def admin_visitors():
         "visitors": visitor_list
     })
 
+@app.route("/admin/appeals", methods=["GET"])
+@admin_required
+
+def admin_appeals():
+    appeals = AppealRequest.query.order_by(
+        AppealRequest.created_at.desc()
+    ).all()
+
+    appeal_list = []
+
+    for appeal in appeals:
+        appeal_list.append({
+            "id": appeal.id,
+            "visitor_id": appeal.visitor_id,
+            "full_name": appeal.full_name,
+            "email": appeal.email,
+            "reason": appeal.reason,
+            "status": appeal.status,
+            "created_at": (
+                appeal.created_at.isoformat()
+                if appeal.created_at else None
+            )
+        })
+
+    return jsonify({
+        "success": True,
+        "total_appeals": len(appeal_list),
+        "appeals": appeal_list
+    })
+
+@app.route("/admin/appeals/<int:appeal_id>/status", methods=["PUT"])
+@admin_required
+def update_appeal_status(appeal_id):
+
+    data = request.get_json(silent=True) or {}
+    new_status = data.get("status", "").strip()
+
+    if new_status not in ["Approved", "Rejected"]:
+        return jsonify({
+            "success": False,
+            "message": "Invalid appeal status."
+        }), 400
+
+    appeal = AppealRequest.query.get(appeal_id)
+
+    if not appeal:
+        return jsonify({
+            "success": False,
+            "message": "Appeal not found."
+        }), 404
+
+    appeal.status = new_status
+        # RESTORE VISITOR ACCESS WHEN APPEAL IS APPROVED
+    if new_status == "Approved":
+
+        visitor = VisitorAccess.query.filter_by(
+            visitor_id=appeal.visitor_id
+        ).first()
+
+        if visitor:
+            visitor.is_blocked = False
+            visitor.auto_blocked_until = None
+            visitor.irrelevant_count = 0
+            visitor.last_irrelevant_at = None
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "message": f"Appeal successfully {new_status.lower()}.",
+        "status": appeal.status
+    }), 200
 
 @app.route("/admin/visitors/rename", methods=["POST"])
 @admin_required
@@ -867,6 +1110,72 @@ Jundytech Solutions
 
     return result.get("id")
 
+def send_appeal_notification_via_gmail(appeal):
+
+    BASE_DIR = Path(__file__).resolve().parent
+
+    token_path = Path(
+        os.getenv(
+            "GMAIL_TOKEN_FILE",
+            str(BASE_DIR / "gmail_token.json")
+        )
+    )
+
+    if not token_path.exists():
+        raise FileNotFoundError("Gmail token file not found.")
+
+    SCOPES = [
+        "https://www.googleapis.com/auth/gmail.send"
+    ]
+
+    credentials = Credentials.from_authorized_user_file(
+        str(token_path),
+        SCOPES
+    )
+
+    if credentials.expired and credentials.refresh_token:
+        credentials.refresh(GoogleAuthRequest())
+
+    if not credentials.valid:
+        raise RuntimeError("Gmail authorization is invalid or expired.")
+
+    service = build(
+        "gmail",
+        "v1",
+        credentials=credentials
+    )
+
+    message = EmailMessage()
+
+    message["To"] = "jundyconejos@gmail.com"
+    message["Subject"] = "New JUNDY AI Access Appeal"
+
+    message.set_content(f"""
+A new appeal has been submitted.
+
+Appeal ID: {appeal.id}
+Visitor ID: {appeal.visitor_id}
+
+Name: {appeal.full_name}
+Email: {appeal.email}
+
+Reason:
+{appeal.reason}
+
+Status: {appeal.status}
+""")
+
+    encoded_message = base64.urlsafe_b64encode(
+        message.as_bytes()
+    ).decode("utf-8")
+
+    result = service.users().messages().send(
+        userId="me",
+        body={"raw": encoded_message}
+    ).execute()
+
+    return result.get("id")
+
 
 # ADMIN: APPROVE RESUME REQUEST
 @app.route("/admin/resume-requests/<int:request_id>/approve", methods=["POST"])
@@ -1000,7 +1309,7 @@ def reject_resume_request(request_id):
 
     except Exception as e:
         print("Resume approval email failed:", e)
-    
+
     email_sent = False
 
     try:
@@ -1165,6 +1474,54 @@ def submit_resume_request():
             "error": "Unable to submit your request. Please try again."
         }), 500
 
+@app.route("/appeal", methods=["POST"])
+def submit_appeal():
+    print("========== APPEAL REQUEST RECEIVED ==========")
+    data = request.get_json(silent=True) or {}
+    visitor_id = data.get("visitor_id", "").strip()
+    full_name = data.get("full_name", "").strip()
+    email = data.get("email", "").strip()
+    reason = data.get("reason", "").strip()
+
+    if not all([visitor_id, full_name, email, reason]):
+        return jsonify({
+            "success": False,
+            "message": "Please complete all fields."
+        }), 400
+
+    visitor = VisitorAccess.query.filter_by(
+        visitor_id=visitor_id
+    ).first()
+
+    if not visitor:
+        return jsonify({
+            "success": False,
+            "message": "Visitor record not found."
+        }), 404
+
+    appeal = AppealRequest(
+        visitor_id=visitor_id,
+        full_name=full_name,
+        email=email,
+        reason=reason
+    )
+
+    db.session.add(appeal)
+    db.session.commit()
+
+    try:
+        gmail_message_id = send_appeal_notification_via_gmail(appeal)
+        print("Appeal notification sent. Gmail ID:", gmail_message_id)
+
+    except Exception as e:
+        print("Appeal notification email failed:", e)
+        traceback.print_exc()
+
+    return jsonify({
+        "success": True,
+        "message": "Your appeal has been submitted successfully."
+    }), 201
+
 @app.route("/chat", methods=["POST"])
 def chat():
     print("========== NEW CHAT FUNCTION RUNNING ==========")
@@ -1187,7 +1544,7 @@ def chat():
             return jsonify({"error": "Invalid visitor ID"}), 400
 
         user_message = data.get("message", "").strip()
-        
+
         conversation_history = data.get("history", [])
 
         if not isinstance(conversation_history, list):
@@ -1226,10 +1583,11 @@ def chat():
         browser_name = data.get("browser_name", "Unknown Browser")
 
         visitor_result = record_visitor_question(
-            visitor_id,
-            device_name,
-            browser_name
-        )
+        visitor_id,
+        device_name,
+        browser_name,
+        user_message
+    )
 
         # BLOCKED VISITOR
         if visitor_result["blocked"]:
@@ -1237,6 +1595,9 @@ def chat():
                 "error": "visitor_blocked",
                 "message": "Access to JUNDY AI has been restricted."
             }), 403
+
+        # ABUSE WARNING
+        warning_message = visitor_result.get("warning")
 
         used_questions = visitor_result["used"]
         access_type = visitor_result["access_type"]
@@ -1257,6 +1618,25 @@ def chat():
                 }), 429
 
         remaining_questions = DAILY_QUESTION_LIMIT - used_questions
+
+                # GOOGLE MAPS RESPONSE (AFTER ACCESS AND ABUSE CHECKS)
+        normalized_map_message = user_message.lower().strip()
+
+        if any(keyword in normalized_map_message for keyword in [
+            "location", "where", "address", "map"
+        ]):
+            return jsonify({
+                "reply": (
+                    "You can find Jundytech Solutions here: "
+                    "https://www.google.com/maps/search/"
+                    "?api=1&query=Jundytech+Solutions"
+                ),
+                "limit": DAILY_QUESTION_LIMIT,
+                "used": used_questions,
+                "remaining": remaining_questions,
+                "warning": warning_message
+            })
+
         # LOAD ONLY RELEVANT PORTFOLIO KNOWLEDGE
         knowledge = get_relevant_knowledge(user_message)
 
@@ -1280,7 +1660,7 @@ def chat():
 
         business_status = "OPEN" if is_business_open else "CLOSED"
 
-        
+
         normalized_message = user_message.lower().strip()
 
         # Check whether the question needs live time or business information
@@ -1321,7 +1701,7 @@ def chat():
             time_information = ""
 
 
-                
+
         # DIRECT RESPONSE FOR CURRENT DATE AND TIME
         normalized_message = user_message.lower().strip()
 
@@ -1355,11 +1735,12 @@ def chat():
             print("JUNDY AI DIRECT TIME RESPONSE:", reply)
 
             return jsonify({
-            "reply": reply,
-            "limit": DAILY_QUESTION_LIMIT,
-            "used": used_questions,
-            "remaining": remaining_questions
-        })
+                "reply": reply,
+                "limit": DAILY_QUESTION_LIMIT,
+                "used": used_questions,
+                "remaining": remaining_questions,
+                "warning": warning_message
+            })
 
         print("JUNDY AI LIVE TIME:", current_time_context)
         print("DEBUG: TIME CHECK REACHED")
@@ -1375,8 +1756,8 @@ def chat():
         print(knowledge[:1000])
         print("==========================================\n")
 
-        
-                
+
+
         system_prompt = f"""
         You are JUNDY AI, the friendly portfolio assistant of Rodolfo G. Conejos III (Jundy).
 
@@ -1442,7 +1823,7 @@ def chat():
         "remaining": remaining_questions
     })
 
-    
+
 
     except Exception as e:
 
@@ -1503,3 +1884,12 @@ if __name__ == "__main__":
 
 with app.app_context():
     db.create_all()
+
+    db.session.execute(db.text("""
+        ALTER TABLE visitor_access
+        ADD COLUMN IF NOT EXISTS auto_blocked_until TIMESTAMP WITH TIME ZONE,
+        ADD COLUMN IF NOT EXISTS irrelevant_count INTEGER NOT NULL DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS last_irrelevant_at TIMESTAMP WITH TIME ZONE
+    """))
+
+    db.session.commit()
