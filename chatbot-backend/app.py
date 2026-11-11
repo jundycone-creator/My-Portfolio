@@ -21,6 +21,7 @@ from googleapiclient.discovery import build
 from google.auth.transport.requests import Request as GoogleAuthRequest
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
+import traceback
 
 
 # Load API key from .env
@@ -896,6 +897,7 @@ def send_approved_resume(request_id):
 
     except Exception as e:
         print("Resume PDF sending failed:", e)
+        traceback.print_exc()
 
         return jsonify({
             "success": False,
