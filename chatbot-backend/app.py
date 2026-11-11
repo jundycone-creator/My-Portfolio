@@ -948,6 +948,9 @@ def send_approved_resume(request_id):
             f"Gmail message ID: {gmail_message_id}"
         )
 
+        resume_request.status = "sent"
+        db.session.commit()
+
         return jsonify({
             "success": True,
             "message": f"Resume successfully sent to {resume_request.email}."

@@ -483,19 +483,20 @@
             }
 
             
-            table.innerHTML = requests.map(item => `
-                <tr>
-                    <td>${escapeHTML(item.full_name)}</td>
-                    <td>${escapeHTML(item.email)}</td>
-                    <td>${escapeHTML(item.purpose)}</td>
-                    <td>${escapeHTML(item.status)}</td>
-                    <td>
-                        ${item.request_date
-                            ? new Date(item.request_date).toLocaleString()
-                            : "N/A"}
-                    </td>
-                    <td>
-                        ${item.status === "pending"
+                    
+        table.innerHTML = requests.map(item => `
+            <tr>
+                <td>${escapeHTML(item.full_name)}</td>
+                <td>${escapeHTML(item.email)}</td>
+                <td>${escapeHTML(item.purpose)}</td>
+                <td>${escapeHTML(item.status)}</td>
+                <td>
+                    ${item.request_date
+                        ? new Date(item.request_date).toLocaleString()
+                        : "N/A"}
+                </td>
+                <td>
+                    ${item.status === "pending"
                         ? `
                             <button
                                 class="success"
@@ -520,10 +521,18 @@
                                     Send Resume
                                 </button>
                             `
-                            : "No action available"}
-                    </td>
-                </tr>
-            `).join("");
+                            : item.status === "sent"
+                                ? `
+                                    <span style="color: #16a34a; font-weight: bold;">
+                                        ✓ Resume Successfully Sent
+                                    </span>
+                                `
+                                : "No action available"
+                    }
+                </td>
+            </tr>
+        `).join("");
+
 
 
         } catch (error) {
