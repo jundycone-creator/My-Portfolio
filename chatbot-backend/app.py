@@ -1949,7 +1949,27 @@ def chat():
         device_name,
         browser_name,
         user_message
-    )
+        )
+        # CHECK SPECIAL VISITOR
+        visitor_record = VisitorAccess.query.filter_by(
+            visitor_id=visitor_id
+        ).first()
+
+        visitor_name = (
+            visitor_record.visitor_name.strip()
+            if visitor_record and visitor_record.visitor_name
+            else ""
+        )
+
+        is_special_visitor = False
+
+        if visitor_name:
+            is_special_visitor = SpecialVisitor.query.filter(
+                db.func.lower(SpecialVisitor.name) == visitor_name.lower()
+            ).first() is not None
+
+        print("SPECIAL VISITOR NAME:", visitor_name)
+        print("IS SPECIAL VISITOR:", is_special_visitor)
 
         # BLOCKED VISITOR
         if visitor_result["blocked"]:
@@ -2118,7 +2138,23 @@ def chat():
         print(knowledge[:1000])
         print("==========================================\n")
 
-
+        # SPECIAL VISITOR PERSONALITY
+        if is_special_visitor:
+            special_personality = """
+            SPECIAL VISITOR MODE:
+            - The visitor is someone from Jundy's past.
+            - Add subtle hugot, playful teasing, nostalgia, and warmth.
+            - Occasionally include witty or sweet remarks inspired by memories.
+            - Make responses varied and natural, never repetitive.
+            - Keep the humor respectful and avoid embarrassing the visitor.
+            - Do not assume Jundy is in a relationship.
+            - Jundy is currently single.
+            - Never claim Jundy still loves, misses, or wants the visitor back.
+            - Do not turn every answer into a romantic message.
+            - Answer the actual question first, then naturally add a little hugot when appropriate.
+            """
+        else:
+            special_personality = ""
 
         system_prompt = f"""
         You are JUNDY AI, the friendly portfolio assistant of Rodolfo G. Conejos III (Jundy).
@@ -2129,7 +2165,7 @@ def chat():
         - Follow the visitor's preferred language.
         - Answer directly and concisely.
         - Simple questions: 1–3 sentences. Use bullets when helpful.
-
+        {special_personality}
         KNOWLEDGE:
         {knowledge}
 

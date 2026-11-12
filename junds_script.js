@@ -503,7 +503,7 @@ document.addEventListener("keydown", function(event) {
 
 
 // ==========================================
-// 9. TYPING ANIMATION
+// . TYPING ANIMATION
 // ==========================================
 
 const nameText = "RODOLFO CONEJOS III";
@@ -516,6 +516,10 @@ let deleting = false;
 
 
 function typingAnimation() {
+    if (window.matchMedia("(max-width: 600px)").matches) {
+        typingElement.textContent = nameText;
+        return;
+    }
 
     if (!typingElement) return;
 
@@ -789,9 +793,32 @@ document.addEventListener("DOMContentLoaded", function () {
     const chatWindow = document.getElementById("chatbotWindow");
     const closeButton = document.getElementById("closeChatbot");
     const messages = document.getElementById("chatbotMessages");
+    const welcomeMessage = document.getElementById("chatbotWelcomeMessage");
+    window.testChatbotWelcome = updateChatbotWelcome;
     const input = document.getElementById("chatbotInput");
     const sendButton = document.getElementById("chatbotSend");
     const quickQuestions = document.querySelector(".chatbot-quick-questions");
+
+   // PERSONALIZE CHATBOT WELCOME MESSAGE
+    function updateChatbotWelcome() {
+        const visitorName = localStorage.getItem("jundy_ai_visitor_name");
+        const isSpecialVisitor =
+            localStorage.getItem("jundy_ai_is_special_visitor") === "true";
+
+        if (!welcomeMessage || !visitorName) return;
+
+        if (isSpecialVisitor) {
+            welcomeMessage.textContent =
+                `Hey, ${visitorName}! ❤️ Finally, you're here! You know, Jundy is still hoping you'd visit again. He misses you! It's always nice to have you around. Welcome back!`;
+        } else {
+            welcomeMessage.textContent =
+                `Hello, ${visitorName}! 👋 Welcome to my portfolio. I'm Jundy's virtual assistant. How can I help you today?`;
+        }
+    }
+
+    // Update greeting when chatbot is opened
+    updateChatbotWelcome();
+
 
 
     // OPEN RESUME PREVIEW
@@ -969,7 +996,6 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("Chatbot error: One or more HTML elements are missing.");
         return;
     }
-
     // OPEN CHATBOT WITH DAILY USAGE NOTICE
     toggle.addEventListener("click", function () {
 
@@ -979,6 +1005,9 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
+        // Update personalized greeting
+        updateChatbotWelcome();
+
         // Check if user already accepted during this session
         if (sessionStorage.getItem("jundyAIUsageAccepted") === "true") {
             chatWindow.classList.add("active");
@@ -987,6 +1016,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Show notice before opening chatbot
         showAIUsageNotice(() => {
+            updateChatbotWelcome();
             chatWindow.classList.add("active");
         });
 
@@ -1931,6 +1961,12 @@ function showAIUsageNotice(onAccept) {
             localStorage.setItem(visitorNameKey, result.visitor_name);
         }
 
+        // SAVE SPECIAL VISITOR STATUS
+        localStorage.setItem(
+            "jundy_ai_is_special_visitor",
+            result.is_special_visitor ? "true" : "false"
+        );
+
         return {
             visitor_name: result.visitor_name,
             is_special_visitor: result.is_special_visitor,
@@ -1945,6 +1981,7 @@ function showAIUsageNotice(onAccept) {
         const overlay = document.getElementById("specialGreetingOverlay");
         const title = document.getElementById("specialGreetingTitle");
         const canvas = document.getElementById("fireworksCanvas");
+        const message = document.getElementById("specialGreetingMessage");
 
         if (!overlay || !title || !canvas) return;
 
@@ -1954,7 +1991,36 @@ function showAIUsageNotice(onAccept) {
         title.textContent = isReturning
             ? `Welcome back, ${visitorName}!`
             : `Hey, ${visitorName}!`;
+
+        message.textContent = isReturning
+            ? "Wow bumalik ah HAHAHA joke lang po It's nice to see you again! love ❤️"
+            : "Welcome to my portfolio love HAHAHAjoke! It's been a while. I'm glad you found me!";
+
         overlay.style.display = "flex";
+
+        overlay.classList.remove("fade-out");
+
+        requestAnimationFrame(() => {
+            overlay.classList.add("show");
+        });
+
+        // CREATE FLOATING HEARTS
+        const heartSymbols = ["❤️", "💕", "💗", "💖", "💘"];
+
+        for (let i = 0; i < 18; i++) {
+            const heart = document.createElement("div");
+
+            heart.className = "special-heart";
+            heart.textContent =
+                heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
+
+            heart.style.left = Math.random() * 100 + "%";
+            heart.style.animationDelay = Math.random() * 5 + "s";
+            heart.style.animationDuration = (4 + Math.random() * 4) + "s";
+            heart.style.fontSize = (16 + Math.random() * 25) + "px";
+
+            overlay.appendChild(heart);
+        }
 
         function resizeCanvas() {
             canvas.width = window.innerWidth;
@@ -2032,15 +2098,28 @@ function showAIUsageNotice(onAccept) {
 
         animationId = requestAnimationFrame(animate);
 
-        // Automatically close after 7 seconds
+        // FADE OUT AFTER 7 SECONDS
         setTimeout(() => {
-            cancelAnimationFrame(animationId);
-            window.removeEventListener("resize", resizeCanvas);
-            overlay.style.display = "none";
-        }, 7000);
-    }
+            overlay.classList.add("fade-out");
 
-    
+            setTimeout(() => {
+                cancelAnimationFrame(animationId);
+                window.removeEventListener("resize", resizeCanvas);
+
+                // REMOVE FLOATING HEARTS
+                overlay.querySelectorAll(".special-heart").forEach(heart => {
+                    heart.remove();
+                });
+
+                overlay.classList.remove("show", "fade-out");
+                overlay.style.display = "none";
+
+            }, 1200);
+
+        }, 7000);
+        window.testSpecialGreeting = showSpecialGreeting;
+    }
+    window.testSpecialGreeting = showSpecialGreeting;
     function showAdminGreeting(visitorName, deviceLabel) {
         // Prevent duplicate Admin greeting overlays
         document.getElementById("adminGreetingOverlay")?.remove();
