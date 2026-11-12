@@ -167,6 +167,22 @@ class VisitorAccess(db.Model):
     )
 
 
+class SpecialVisitor(db.Model):
+    __tablename__ = "special_visitors"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    name = db.Column(
+        db.String(150),
+        nullable=False,
+        unique=True
+    )
+
+    created_at = db.Column(
+        db.DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
 
 # ==========================================
 # ADMIN / CREATOR ONLINE STATUS
@@ -196,6 +212,9 @@ with app.app_context():
     """))
 
     db.session.commit()
+    
+
+
 
 def is_abusive_message(message):
 
@@ -742,6 +761,100 @@ def admin_visitors():
         "total_visitors": len(visitor_list),
         "visitors": visitor_list
     })
+
+
+@app.route("/admin/special-visitors", methods=["GET"])
+@admin_required
+def get_special_visitors():
+
+    visitors = SpecialVisitor.query.order_by(
+        SpecialVisitor.name.asc()
+    ).all()
+
+    return jsonify({
+        "success": True,
+        "special_visitors": [
+            {
+                "id": visitor.id,
+                "name": visitor.name
+            }
+            for visitor in visitors
+        ]
+    }), 200
+
+@app.route("/admin/special-visitors/add", methods=["POST"])
+@admin_required
+def add_special_visitor():
+
+    data = request.get_json(silent=True) or {}
+
+    name = str(data.get("name", "")).strip()
+
+    if not name or len(name) > 150:
+        return jsonify({
+            "error": "Name must contain 1 to 150 characters."
+        }), 400
+
+    existing = SpecialVisitor.query.filter(
+        db.func.lower(SpecialVisitor.name) == name.lower()
+    ).first()
+
+    if existing:
+        return jsonify({
+            "error": "This name is already in the special visitors list."
+        }), 409
+
+    try:
+        visitor = SpecialVisitor(name=name)
+
+        db.session.add(visitor)
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Special visitor added successfully.",
+            "special_visitor": {
+                "id": visitor.id,
+                "name": visitor.name
+            }
+        }), 201
+
+    except Exception:
+        db.session.rollback()
+        raise
+
+@app.route("/admin/special-visitors/delete", methods=["POST"])
+@admin_required
+def delete_special_visitor():
+
+    data = request.get_json(silent=True) or {}
+
+    visitor_id = data.get("id")
+
+    if not isinstance(visitor_id, int):
+        return jsonify({
+            "error": "Invalid special visitor ID."
+        }), 400
+
+    visitor = SpecialVisitor.query.get(visitor_id)
+
+    if not visitor:
+        return jsonify({
+            "error": "Special visitor not found."
+        }), 404
+
+    try:
+        db.session.delete(visitor)
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Special visitor removed successfully."
+        }), 200
+
+    except Exception:
+        db.session.rollback()
+        raise
 
 @app.route("/admin/appeals", methods=["GET"])
 @admin_required
@@ -1713,7 +1826,9 @@ def register_visitor():
 
         visitor = VisitorAccess.query.filter_by(
             visitor_id=visitor_id
-        ).first()
+        ).first()       
+
+        print("DATABASE VISITOR NAME:", visitor.visitor_name if visitor else None)
 
         if visitor:
             visitor.device_name = device_name
@@ -1721,11 +1836,39 @@ def register_visitor():
             visitor.last_seen = now
 
         db.session.commit()
+                # Check whether this visitor is in the special visitors list
+        is_special_visitor = SpecialVisitor.query.filter(
+            db.func.lower(SpecialVisitor.name) ==
+            visitor.visitor_name.strip().lower()
+        ).first() is not None
 
+                # Check for Jundy's recognized Admin device
+        # Check for JUNDICK's recognized Admin device
+        admin_device_labels = {
+            "JUNDICK LOCAL",
+            "JUNDICK LIVE"
+        }
+
+        current_name = (visitor.visitor_name or "").strip().upper()
+        current_device_label = (visitor.device_label or "").strip().upper()
+
+        is_admin_device = (
+            current_name == "JUNDICK"
+            and current_device_label in admin_device_labels
+        )
+
+        print("ADMIN NAME CHECK:", current_name)
+        print("ADMIN DEVICE LABEL CHECK:", current_device_label)
+        print("IS ADMIN DEVICE:", is_admin_device)
+
+        print("RETURNING VISITOR NAME:", visitor.visitor_name)
         return jsonify({
             "success": True,
             "message": "Visitor registered successfully.",
-            "visitor_name": visitor.visitor_name
+            "visitor_name": visitor.visitor_name,
+            "is_special_visitor": is_special_visitor,
+            "is_admin_device": is_admin_device,
+            "device_label": visitor.device_label
         }), 200
     
     except Exception as e:
@@ -2089,6 +2232,18 @@ def download_resume(token):
         download_name="Rodolfo_Conejos_Resume.pdf",
         mimetype="application/pdf"
     )
+
+# DEBUG SPECIAL VISITOR ROUTES
+for rule in app.url_map.iter_rules():
+    if "special-visitors" in rule.rule:
+        print(
+            "SPECIAL ROUTE:",
+            rule.rule,
+            "METHODS:",
+            rule.methods,
+            "ENDPOINT:",
+            rule.endpoint
+        )
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=False)
