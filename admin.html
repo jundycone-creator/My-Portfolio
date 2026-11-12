@@ -1881,7 +1881,7 @@ document.getElementById("addSpecialVisitorButton")
         }
 
         try {
-            const response = await fetch("http://127.0.0.1:5000/admin/special-visitors/add", {
+            const response = await fetch(`${API_URL}/admin/special-visitors/add`, {
                 method: "POST",
                 credentials: "include",
                 headers: {
@@ -1921,7 +1921,7 @@ async function loadSpecialVisitors() {
     const list = document.getElementById("specialVisitorsList");
 
     try {
-        const response = await fetch("http://127.0.0.1:5000/admin/special-visitors", {
+        const response = await fetch(`${API_URL}/admin/special-visitors`, {
             credentials: "include"
         });
         const data = await response.json();

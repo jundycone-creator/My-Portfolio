@@ -2208,7 +2208,7 @@ function showAIUsageNotice(onAccept) {
 
         // First-time visitor: show welcome popup.
         modal.style.display = "flex";
-        nameInput.focus();
+        //nameInput.focus();
 
         form.addEventListener("submit", async function (event) {
             event.preventDefault();
