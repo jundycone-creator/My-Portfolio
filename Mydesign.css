@@ -4457,3 +4457,42 @@ a {
         transform: scale(1) translateY(0);
     }
 }
+
+/* SPECIAL VISITORS MANAGER */
+#specialVisitorsSection {
+    margin-top: 20px;
+}
+
+.special-visitors-controls {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+#specialVisitorNameInput {
+    flex: 1;
+    min-width: 0;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+#addSpecialVisitorButton {
+    padding: 12px 18px;
+    border: none;
+    border-radius: 8px;
+    background: #8b2635;
+    color: white;
+    cursor: pointer;
+}
+
+#specialVisitorsList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+@media (max-width: 600px) {
+    .special-visitors-controls {
+        flex-direction: column;
+    }
+}

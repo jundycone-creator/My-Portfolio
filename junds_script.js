@@ -1931,18 +1931,17 @@ function showAIUsageNotice(onAccept) {
             localStorage.setItem(visitorNameKey, result.visitor_name);
         }
 
-        return result.visitor_name;
+        return {
+            visitor_name: result.visitor_name,
+            is_special_visitor: result.is_special_visitor,
+            is_admin_device: result.is_admin_device,
+            device_label: result.device_label
+        };
     }
 
-    // SPECIAL VISITOR NAMES
-const specialVisitorNames = [
-    "krisha",
-    "krish",
-    "kate"
-];
 
     // SPECIAL GREETING WITH FIREWORKS
-    function showSpecialGreeting(visitorName) {
+    function showSpecialGreeting(visitorName, isReturning = false) {
         const overlay = document.getElementById("specialGreetingOverlay");
         const title = document.getElementById("specialGreetingTitle");
         const canvas = document.getElementById("fireworksCanvas");
@@ -1952,7 +1951,9 @@ const specialVisitorNames = [
         const ctx = canvas.getContext("2d");
         const particles = [];
 
-        title.textContent = `Hey, ${visitorName}!`;
+        title.textContent = isReturning
+            ? `Welcome back, ${visitorName}!`
+            : `Hey, ${visitorName}!`;
         overlay.style.display = "flex";
 
         function resizeCanvas() {
@@ -2039,12 +2040,112 @@ const specialVisitorNames = [
         }, 7000);
     }
 
+    
+    function showAdminGreeting(visitorName, deviceLabel) {
+        // Prevent duplicate Admin greeting overlays
+        document.getElementById("adminGreetingOverlay")?.remove();
+
+        const style = document.createElement("style");
+
+        style.textContent = `
+            @keyframes adminGreetingFade {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+
+            @keyframes adminGreetingRise {
+                from {
+                    opacity: 0;
+                    transform: translateY(30px) scale(0.9);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+
+            @keyframes adminGreetingGlow {
+                0%, 100% { text-shadow: 0 0 10px #d4af37; }
+                50% { text-shadow: 0 0 30px #ffd700, 0 0 45px #a855f7; }
+            }
+
+            #adminGreetingOverlay {
+                position: fixed;
+                inset: 0;
+                z-index: 999999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: radial-gradient(circle, #251044 0%, #08030f 75%);
+                animation: adminGreetingFade 0.7s ease;
+                padding: 20px;
+                text-align: center;
+            }
+
+            .admin-greeting-content {
+                animation: adminGreetingRise 1s ease;
+                color: white;
+                font-family: Arial, sans-serif;
+            }
+
+            .admin-greeting-crown {
+                font-size: 65px;
+                margin-bottom: 20px;
+            }
+
+            .admin-greeting-title {
+                color: #ffd700;
+                font-size: clamp(25px, 5vw, 42px);
+                font-weight: bold;
+                animation: adminGreetingGlow 2s infinite;
+            }
+
+            .admin-greeting-subtitle {
+                color: #e9d5ff;
+                font-size: 15px;
+                letter-spacing: 2px;
+                margin-top: 15px;
+            }
+        `;
+
+        document.head.appendChild(style);
+
+        const overlay = document.createElement("div");
+        overlay.id = "adminGreetingOverlay";
+
+        const content = document.createElement("div");
+        content.className = "admin-greeting-content";
+
+        const crown = document.createElement("div");
+        crown.className = "admin-greeting-crown";
+        crown.textContent = "👑";
+
+        const heading = document.createElement("h1");
+        heading.className = "admin-greeting-title";
+        heading.textContent = `WELCOME BACK, ADMIN ${visitorName.toUpperCase()}!`;
+
+        const subtitle = document.createElement("p");
+        subtitle.className = "admin-greeting-subtitle";
+        subtitle.textContent = `JUNDYTECH SOLUTIONS • ${deviceLabel}`;
+
+        content.append(crown, heading, subtitle);
+        overlay.appendChild(content);
+        document.body.appendChild(overlay);
+
+        setTimeout(() => {
+            overlay.remove();
+            style.remove();
+        }, 6000);
+    }
+
+
     function initializeVisitorWelcome() {
         const modal = document.getElementById("visitorWelcomeModal");
         const form = document.getElementById("visitorWelcomeForm");
         const nameInput = document.getElementById("visitorWelcomeName");
         const submitButton = document.getElementById("visitorWelcomeSubmit");
         const errorMessage = document.getElementById("visitorWelcomeError");
+        
 
         if (!modal || !form || !nameInput || !submitButton) return;
 
@@ -2056,9 +2157,32 @@ const specialVisitorNames = [
             form.style.display = "none";
 
             registerVisitor(savedName)
-                .then(updatedName => {
-                    const displayName = updatedName || savedName;
+                .then(registration => {
+                    const displayName = registration.visitor_name || savedName;
 
+                    console.log("SAVED NAME:", savedName);
+                    console.log("UPDATED NAME:", registration.visitor_name);
+                    console.log("IS SPECIAL VISITOR:", registration.is_special_visitor);
+                    console.log("IS ADMIN DEVICE:", registration.is_admin_device);
+                    console.log("DEVICE LABEL:", registration.device_label);
+
+                    // ADMIN RETURNING VISITOR
+                    if (registration.is_admin_device) {
+                        modal.style.display = "none";
+                        showAdminGreeting(displayName, registration.device_label);
+                        console.log("ADMIN GREETING TRIGGERED!");
+                        return;
+                    }
+
+                    // SPECIAL RETURNING VISITOR
+                    if (registration.is_special_visitor) {
+                        modal.style.display = "none";
+                        showSpecialGreeting(displayName, true);
+                        console.log("SPECIAL GREETING TRIGGERED!");
+                        return;
+                    }
+
+                    // NORMAL RETURNING VISITOR
                     title.textContent = "WELCOME BACK!";
 
                     const message = modal.querySelector(".visitor-welcome-box > p");
@@ -2078,22 +2202,6 @@ const specialVisitorNames = [
                         modal.style.display = "none";
                     }, 3000);
                 })
-                .catch(error => {
-                    console.error("Visitor tracking error:", error);
-
-                    title.textContent = "WELCOME BACK!";
-
-                    const message = modal.querySelector(".visitor-welcome-box > p");
-
-                    message.textContent =
-                        `You're back, ${savedName}. Appreciate your continued visit. Have a great day!`;
-
-                    modal.style.display = "flex";
-
-                    setTimeout(() => {
-                        modal.style.display = "none";
-                    }, 3000);
-                });
 
             return;
         }
@@ -2117,17 +2225,22 @@ const specialVisitorNames = [
             errorMessage.textContent = "";
 
             try {
-                await registerVisitor(visitorName);
+                const registration = await registerVisitor(visitorName);
 
-                localStorage.setItem(visitorNameKey, visitorName);
+                localStorage.setItem(visitorNameKey, registration.visitor_name);
 
                 modal.style.display = "none";
 
-                // Check if visitor has a special name
-                const normalizedName = visitorName.trim().toLowerCase();
+                if (registration.is_admin_device) {
+                    showAdminGreeting(
+                        registration.visitor_name,
+                        registration.device_label
+                    );
+                    return;
+                }
 
-                if (specialVisitorNames.includes(normalizedName)) {
-                    showSpecialGreeting(visitorName);
+                if (registration.is_special_visitor) {
+                    showSpecialGreeting(registration.visitor_name);
                 }
 
             } catch (error) {

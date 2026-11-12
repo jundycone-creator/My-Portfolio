@@ -583,6 +583,73 @@
                     text-align: left;
                 }
             }
+
+            /* SPECIAL VISITOR ADD BUTTON */
+            #addSpecialVisitorButton {
+                border: 1px solid rgba(255, 59, 67, .35);
+                background: rgba(150, 10, 20, .16);
+                color: #ff858a;
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all .3s ease;
+            }
+
+            #addSpecialVisitorButton:hover {
+                background: rgba(255, 59, 67, .15);
+                border-color: #ff3b43;
+                color: #ffffff;
+                box-shadow: 0 0 12px rgba(255, 59, 67, .25);
+                transform: translateY(-2px);
+            }
+
+            #addSpecialVisitorButton:active {
+                transform: scale(.97);
+            }
+
+            /* SPECIAL VISITOR ITEM LAYOUT */
+            .special-visitor-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 15px;
+                padding: 12px 15px;
+                margin-top: 10px;
+                border: 1px solid rgba(255, 59, 67, .2);
+                border-radius: 10px;
+                background: rgba(255, 255, 255, .03);
+            }
+
+            .special-visitor-item span {
+                flex: 1;
+                min-width: 0;
+                overflow-wrap: anywhere;
+            }
+
+            /* SPECIAL VISITOR REMOVE BUTTON */
+            .special-visitor-item button {
+                border: 1px solid rgba(255, 59, 67, .35);
+                background: rgba(150, 10, 20, .16);
+                color: #ff858a;
+                padding: 8px 16px;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all .3s ease;
+            }
+
+            .special-visitor-item button:hover {
+                background: rgba(255, 59, 67, .15);
+                border-color: #ff3b43;
+                color: #ffffff;
+                box-shadow: 0 0 12px rgba(255, 59, 67, .25);
+                transform: translateY(-2px);
+            }
+
+            .special-visitor-item button:active {
+                transform: scale(.97);
+            }
         </style>
     </head>
 
@@ -674,6 +741,35 @@
                         <div class="stat-label">Blocked Visitors</div>
                         <h2 id="blockedVisitors">0</h2>
                     </div>
+                </div>
+
+                <!-- SPECIAL VISITORS MANAGER -->
+                <div class="section-panel" id="specialVisitorsSection">
+
+                    <div class="section-heading">
+                        <div>
+                            <h3>Special Visitors</h3>
+                            <p>Manage names that receive the personalized greeting and fireworks animation.</p>
+                        </div>
+                    </div>
+
+                    <div class="special-visitors-controls">
+                        <input
+                            type="text"
+                            id="specialVisitorNameInput"
+                            placeholder="Enter a special visitor name"
+                            maxlength="150"
+                        >
+
+                        <button type="button" id="addSpecialVisitorButton">
+                            Add Special Name
+                        </button>
+                    </div>
+
+                    <div id="specialVisitorsList">
+                        <p>Loading special visitors...</p>
+                    </div>
+
                 </div>
 
                 <div class="section-panel">
@@ -1770,6 +1866,142 @@
 
 updatePhilippineClock();
 setInterval(updatePhilippineClock, 1000);
+
+// SPECIAL VISITORS MANAGER
+
+document.getElementById("addSpecialVisitorButton")
+    .addEventListener("click", async () => {
+
+        const input = document.getElementById("specialVisitorNameInput");
+        const name = input.value.trim();
+
+        if (!name) {
+            alert("Please enter a name.");
+            return;
+        }
+
+        try {
+            const response = await fetch("http://127.0.0.1:5000/admin/special-visitors/add", {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ name })
+            });
+
+            const responseText = await response.text();
+
+            console.log("ADD STATUS:", response.status);
+            console.log("ADD RESPONSE:", responseText);
+
+            const data = responseText ? JSON.parse(responseText) : {};
+
+            if (!response.ok) {
+                alert(data.error || "Unable to add special visitor.");
+                return;
+            }
+
+            input.value = "";
+
+            alert("Special visitor added successfully!");
+
+            loadSpecialVisitors();
+
+        } catch (error) {
+            console.error("Add special visitor error:", error);
+            alert("Server connection error.");
+        }
+    });
+
+    // LOAD SPECIAL VISITORS
+
+async function loadSpecialVisitors() {
+
+    const list = document.getElementById("specialVisitorsList");
+
+    try {
+        const response = await fetch("http://127.0.0.1:5000/admin/special-visitors", {
+            credentials: "include"
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Failed to load special visitors.");
+        }
+
+        list.replaceChildren();
+
+        if (!data.special_visitors.length) {
+            list.textContent = "No special visitors added yet.";
+            return;
+        }
+
+        data.special_visitors.forEach(visitor => {
+
+            const item = document.createElement("div");
+            item.className = "special-visitor-item";
+
+            const name = document.createElement("span");
+            name.textContent = visitor.name;
+
+            const deleteButton = document.createElement("button");
+            deleteButton.textContent = "Remove";
+            deleteButton.type = "button";
+
+            deleteButton.addEventListener("click", () => {
+                deleteSpecialVisitor(visitor.id);
+            });
+
+            item.append(name, deleteButton);
+            list.appendChild(item);
+        });
+
+    } catch (error) {
+        console.error("Load special visitors error:", error);
+        list.textContent = "Unable to load special visitors.";
+    }
+}
+
+// DELETE SPECIAL VISITOR
+
+async function deleteSpecialVisitor(id) {
+
+    if (!confirm("Are you sure you want to remove this special visitor?")) {
+        return;
+    }
+
+    try {
+        const response = await fetch("http://127.0.0.1:5000/admin/special-visitors/delete", {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ id })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.error || "Unable to remove special visitor.");
+            return;
+        }
+
+        alert("Special visitor removed successfully!");
+
+        loadSpecialVisitors();
+
+    } catch (error) {
+        console.error("Delete special visitor error:", error);
+        alert("Server connection error.");
+    }
+}
+
+// INITIALIZE SPECIAL VISITORS MANAGER
+document.addEventListener("DOMContentLoaded", () => {
+    loadSpecialVisitors();
+});
 </script>
 
 </body>
