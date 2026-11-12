@@ -25,6 +25,7 @@ import traceback
 import html
 
 
+
 # Load API key from .env
 load_dotenv()
 
@@ -1831,15 +1832,20 @@ def register_visitor():
         print("DATABASE VISITOR NAME:", visitor.visitor_name if visitor else None)
 
         if visitor:
+            if not visitor.visitor_name:
+                visitor.visitor_name = visitor_name
+
             visitor.device_name = device_name
             visitor.browser_name = browser_name
             visitor.last_seen = now
 
         db.session.commit()
                 # Check whether this visitor is in the special visitors list
+        registered_name = (visitor.visitor_name or visitor_name).strip()
+
         is_special_visitor = SpecialVisitor.query.filter(
             db.func.lower(SpecialVisitor.name) ==
-            visitor.visitor_name.strip().lower()
+            registered_name.lower()
         ).first() is not None
 
                 # Check for Jundy's recognized Admin device
@@ -1874,6 +1880,7 @@ def register_visitor():
     except Exception as e:
         db.session.rollback()
         print("VISITOR REGISTRATION ERROR:", str(e))
+        traceback.print_exc()
         return jsonify({"error": "Unable to register visitor."}), 500
 
 
