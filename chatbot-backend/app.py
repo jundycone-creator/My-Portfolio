@@ -1,6 +1,6 @@
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
 from flask import Flask, request, jsonify, session, send_from_directory, send_file
@@ -87,6 +87,8 @@ class VisitorUsage(db.Model):
         ),
     )
 
+
+
 class AppealRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     visitor_id = db.Column(db.String(64), nullable=False)
@@ -128,6 +130,7 @@ class ResumeDownloadRequest(db.Model):
 class VisitorAccess(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     visitor_id = db.Column(db.String(64), unique=True, nullable=False)
+    visitor_name = db.Column(db.String(150), nullable=True)
     device_name = db.Column(db.String(100), nullable=True)
     device_label = db.Column(db.String(100), nullable=True)
     browser_name = db.Column(db.String(100), nullable=True)
@@ -162,6 +165,37 @@ class VisitorAccess(db.Model):
         default=lambda: datetime.now(PHILIPPINE_TIMEZONE),
         onupdate=lambda: datetime.now(PHILIPPINE_TIMEZONE)
     )
+
+
+
+# ==========================================
+# ADMIN / CREATOR ONLINE STATUS
+# ==========================================
+
+class AdminPresence(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    is_online = db.Column(
+        db.Boolean,
+        default=False,
+        nullable=False
+    )
+    last_heartbeat = db.Column(
+        db.DateTime(timezone=True),
+        nullable=True
+    )
+
+with app.app_context():
+    db.create_all()
+
+    db.session.execute(db.text("""
+        ALTER TABLE visitor_access
+        ADD COLUMN IF NOT EXISTS auto_blocked_until TIMESTAMP WITH TIME ZONE,
+        ADD COLUMN IF NOT EXISTS irrelevant_count INTEGER NOT NULL DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS last_irrelevant_at TIMESTAMP WITH TIME ZONE,
+        ADD COLUMN IF NOT EXISTS visitor_name VARCHAR(150)
+    """))
+
+    db.session.commit()
 
 def is_abusive_message(message):
 
@@ -572,6 +606,79 @@ def admin_logout():
 
 
 
+# ==========================================
+# CREATOR ONLINE STATUS API
+# ==========================================
+
+@app.route("/admin/presence/heartbeat", methods=["POST"])
+@admin_required
+def admin_presence_heartbeat():
+
+    presence = AdminPresence.query.first()
+
+    if not presence:
+        presence = AdminPresence()
+        db.session.add(presence)
+
+    presence.is_online = True
+    presence.last_heartbeat = datetime.now(timezone.utc)
+
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "is_online": True
+    })
+
+
+@app.route("/admin/presence/offline", methods=["POST"])
+@admin_required
+def admin_presence_offline():
+
+    presence = AdminPresence.query.first()
+
+    if presence:
+        presence.is_online = False
+        presence.last_heartbeat = datetime.now(timezone.utc)
+        db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "is_online": False
+    })
+
+
+@app.route("/creator/status", methods=["GET"])
+def creator_status():
+
+    presence = AdminPresence.query.first()
+
+    if not presence or not presence.last_heartbeat:
+        return jsonify({"is_online": False})
+
+    now = datetime.now(timezone.utc)
+
+    last_heartbeat = presence.last_heartbeat
+
+    if last_heartbeat.tzinfo is None:
+        last_heartbeat = last_heartbeat.replace(
+            tzinfo=timezone.utc
+        )
+
+    is_online = (
+        presence.is_online
+        and now - last_heartbeat < timedelta(seconds=45)
+    )
+
+    if presence.is_online and not is_online:
+        presence.is_online = False
+        db.session.commit()
+
+    return jsonify({
+        "is_online": is_online
+    })
+
+
 @app.route("/admin/visitors", methods=["GET"])
 @admin_required
 def admin_visitors():
@@ -607,6 +714,7 @@ def admin_visitors():
 
         visitor_list.append({
             "visitor_id": visitor.visitor_id,
+            "visitor_name": visitor.visitor_name,
             "device_label": visitor.device_label,
             "device_name": visitor.device_name,
             "browser_name": visitor.browser_name,
@@ -748,6 +856,46 @@ def rename_visitor():
         db.session.rollback()
         raise
 
+@app.route("/admin/visitors/edit-name", methods=["POST"])
+@admin_required
+def edit_visitor_name():
+
+    data = request.get_json(silent=True) or {}
+
+    visitor_id = data.get("visitor_id")
+    visitor_name = data.get("visitor_name")
+
+    if not isinstance(visitor_id, str) or not isinstance(visitor_name, str):
+        return jsonify({"error": "Invalid input"}), 400
+
+    visitor_name = visitor_name.strip()
+
+    if not visitor_name or len(visitor_name) > 150:
+        return jsonify({
+            "error": "Visitor name must contain 1 to 150 characters."
+        }), 400
+
+    visitor = VisitorAccess.query.filter_by(
+        visitor_id=visitor_id
+    ).first()
+
+    if not visitor:
+        return jsonify({"error": "Visitor not found"}), 404
+
+    visitor.visitor_name = visitor_name
+
+    try:
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Visitor name updated successfully.",
+            "visitor_name": visitor.visitor_name
+        })
+
+    except Exception:
+        db.session.rollback()
+        raise
 
 @app.route("/admin/visitors/access", methods=["POST"])
 @admin_required
@@ -1522,6 +1670,70 @@ def submit_appeal():
         "message": "Your appeal has been submitted successfully."
     }), 201
 
+
+
+@app.route("/visitor/register", methods=["POST"])
+def register_visitor():
+    data = request.get_json(silent=True) or {}
+
+    visitor_id = str(data.get("visitor_id", "")).strip()
+    visitor_name = str(data.get("visitor_name", "")).strip()
+    device_name = str(data.get("device_name", "Unknown Device")).strip()
+    browser_name = str(data.get("browser_name", "Unknown Browser")).strip()
+
+    if not visitor_id or not 16 <= len(visitor_id) <= 64:
+        return jsonify({"error": "Invalid visitor ID."}), 400
+
+    if not visitor_name or len(visitor_name) > 150:
+        return jsonify({"error": "Please provide a valid name."}), 400
+
+    try:
+        now = datetime.now(timezone.utc)
+
+        db.session.execute(
+            db.text("""
+                INSERT INTO visitor_access
+                    (visitor_id, visitor_name, device_name, browser_name,
+                    access_type, is_blocked, irrelevant_count,
+                    first_seen, last_seen)
+                VALUES
+                    (:visitor_id, :visitor_name, :device_name, :browser_name,
+                    'limited', FALSE, 0,
+                    :now, :now)
+                ON CONFLICT (visitor_id) DO NOTHING
+            """),
+            {
+                "visitor_id": visitor_id,
+                "visitor_name": visitor_name,
+                "device_name": device_name,
+                "browser_name": browser_name,
+                "now": now
+            }
+        )
+
+        visitor = VisitorAccess.query.filter_by(
+            visitor_id=visitor_id
+        ).first()
+
+        if visitor:
+            visitor.device_name = device_name
+            visitor.browser_name = browser_name
+            visitor.last_seen = now
+
+        db.session.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Visitor registered successfully.",
+            "visitor_name": visitor.visitor_name
+        }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        print("VISITOR REGISTRATION ERROR:", str(e))
+        return jsonify({"error": "Unable to register visitor."}), 500
+
+
 @app.route("/chat", methods=["POST"])
 def chat():
     print("========== NEW CHAT FUNCTION RUNNING ==========")
@@ -1882,14 +2094,3 @@ if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=False)
 
 
-with app.app_context():
-    db.create_all()
-
-    db.session.execute(db.text("""
-        ALTER TABLE visitor_access
-        ADD COLUMN IF NOT EXISTS auto_blocked_until TIMESTAMP WITH TIME ZONE,
-        ADD COLUMN IF NOT EXISTS irrelevant_count INTEGER NOT NULL DEFAULT 0,
-        ADD COLUMN IF NOT EXISTS last_irrelevant_at TIMESTAMP WITH TIME ZONE
-    """))
-
-    db.session.commit()

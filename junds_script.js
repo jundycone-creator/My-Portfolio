@@ -506,7 +506,7 @@ document.addEventListener("keydown", function(event) {
 // 9. TYPING ANIMATION
 // ==========================================
 
-const nameText = "Jundy Gwapo";
+const nameText = "RODOLFO CONEJOS III";
 
 const typingElement = document.getElementById("typingName");
 
@@ -1863,4 +1863,503 @@ function showAIUsageNotice(onAccept) {
         .addEventListener("click", () => {
             overlay.remove();
         });
+}
+
+
+
+// ==========================================
+// FIRST-VISIT WELCOME & VISITOR REGISTRATION
+// ==========================================
+
+(function () {
+    const visitorNameKey = "jundy_ai_visitor_name";
+
+    function getVisitorDevice() {
+        return navigator.userAgentData?.platform ||
+               navigator.platform ||
+               "Unknown Device";
+    }
+
+    function getVisitorBrowser() {
+        const ua = navigator.userAgent;
+
+        if (ua.includes("Edg/")) return "Microsoft Edge";
+        if (ua.includes("Chrome/")) return "Google Chrome";
+        if (ua.includes("Firefox/")) return "Mozilla Firefox";
+        if (ua.includes("Safari/")) return "Safari";
+
+        return "Unknown Browser";
+    }
+
+    function getVisitorId() {
+        let visitorId = localStorage.getItem("jundy_ai_visitor_id");
+
+        if (!visitorId) {
+            visitorId = crypto.randomUUID();
+            localStorage.setItem("jundy_ai_visitor_id", visitorId);
+        }
+
+        return visitorId;
+    }
+
+    async function registerVisitor(name) {
+        const visitorId = getVisitorId();
+        console.log("API URL:", API_URL);
+        const response = await fetch(`${API_URL}/visitor/register`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                visitor_id: visitorId,
+                visitor_name: name,
+                device_name: getVisitorDevice(),
+                browser_name: getVisitorBrowser()
+            })
+        });
+
+        const result = await response.json();
+        console.log("VISITOR REGISTRATION RESPONSE:", result);
+        console.log("VISITOR ID:", visitorId);
+
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || "Registration failed.");
+        }
+
+        // Synchronize the latest name from the database
+        if (result.visitor_name) {
+            localStorage.setItem(visitorNameKey, result.visitor_name);
+        }
+
+        return result.visitor_name;
+    }
+
+    // SPECIAL VISITOR NAMES
+const specialVisitorNames = [
+    "krisha",
+    "krish",
+    "kate"
+];
+
+    // SPECIAL GREETING WITH FIREWORKS
+    function showSpecialGreeting(visitorName) {
+        const overlay = document.getElementById("specialGreetingOverlay");
+        const title = document.getElementById("specialGreetingTitle");
+        const canvas = document.getElementById("fireworksCanvas");
+
+        if (!overlay || !title || !canvas) return;
+
+        const ctx = canvas.getContext("2d");
+        const particles = [];
+
+        title.textContent = `Hey, ${visitorName}!`;
+        overlay.style.display = "flex";
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        resizeCanvas();
+
+        window.addEventListener("resize", resizeCanvas);
+
+        const colors = [
+            "#ff3b43",
+            "#ffcc33",
+            "#ffffff",
+            "#ff69b4",
+            "#9b5cff",
+            "#35dc83"
+        ];
+
+        function createFirework() {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height * 0.65;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+
+            for (let i = 0; i < 55; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 5 + 1;
+
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    alpha: 1,
+                    color: color,
+                    size: Math.random() * 3 + 1
+                });
+            }
+        }
+
+        let lastFirework = 0;
+        let animationId;
+
+        function animate(timestamp) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (timestamp - lastFirework > 500) {
+                createFirework();
+                lastFirework = timestamp;
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.035;
+                p.vx *= 0.99;
+                p.alpha -= 0.012;
+
+                ctx.globalAlpha = Math.max(p.alpha, 0);
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            ctx.globalAlpha = 1;
+            animationId = requestAnimationFrame(animate);
+        }
+
+        animationId = requestAnimationFrame(animate);
+
+        // Automatically close after 7 seconds
+        setTimeout(() => {
+            cancelAnimationFrame(animationId);
+            window.removeEventListener("resize", resizeCanvas);
+            overlay.style.display = "none";
+        }, 7000);
+    }
+
+    function initializeVisitorWelcome() {
+        const modal = document.getElementById("visitorWelcomeModal");
+        const form = document.getElementById("visitorWelcomeForm");
+        const nameInput = document.getElementById("visitorWelcomeName");
+        const submitButton = document.getElementById("visitorWelcomeSubmit");
+        const errorMessage = document.getElementById("visitorWelcomeError");
+
+        if (!modal || !form || !nameInput || !submitButton) return;
+
+        const savedName = localStorage.getItem(visitorNameKey);
+
+        if (savedName) {
+            const title = modal.querySelector("h2");
+
+            form.style.display = "none";
+
+            registerVisitor(savedName)
+                .then(updatedName => {
+                    const displayName = updatedName || savedName;
+
+                    title.textContent = "WELCOME BACK!";
+
+                    const message = modal.querySelector(".visitor-welcome-box > p");
+
+                    message.replaceChildren(
+                        document.createTextNode("You're back, "),
+                        Object.assign(document.createElement("strong"), {
+                            className: "welcome-back-name",
+                            textContent: displayName
+                        }),
+                        document.createTextNode(". Appreciate your continued visit. Have a great day!")
+                    );
+
+                    modal.style.display = "flex";
+
+                    setTimeout(() => {
+                        modal.style.display = "none";
+                    }, 3000);
+                })
+                .catch(error => {
+                    console.error("Visitor tracking error:", error);
+
+                    title.textContent = "WELCOME BACK!";
+
+                    const message = modal.querySelector(".visitor-welcome-box > p");
+
+                    message.textContent =
+                        `You're back, ${savedName}. Appreciate your continued visit. Have a great day!`;
+
+                    modal.style.display = "flex";
+
+                    setTimeout(() => {
+                        modal.style.display = "none";
+                    }, 3000);
+                });
+
+            return;
+        }
+
+        // First-time visitor: show welcome popup.
+        modal.style.display = "flex";
+        nameInput.focus();
+
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const visitorName = nameInput.value.trim();
+
+            if (!visitorName) {
+                errorMessage.textContent = "Please enter your name.";
+                return;
+            }
+
+            submitButton.disabled = true;
+            submitButton.textContent = "PLEASE WAIT...";
+            errorMessage.textContent = "";
+
+            try {
+                await registerVisitor(visitorName);
+
+                localStorage.setItem(visitorNameKey, visitorName);
+
+                modal.style.display = "none";
+
+                // Check if visitor has a special name
+                const normalizedName = visitorName.trim().toLowerCase();
+
+                if (specialVisitorNames.includes(normalizedName)) {
+                    showSpecialGreeting(visitorName);
+                }
+
+            } catch (error) {
+                console.error("Visitor registration error:", error);
+                errorMessage.textContent =
+                    "Unable to register right now. Please try again.";
+
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = "CONTINUE";
+            }
+        });
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initializeVisitorWelcome);
+    } else {
+        initializeVisitorWelcome();
+    }
+})();
+
+
+
+// FLOATING BACK TO TOP BUTTON
+document.addEventListener("DOMContentLoaded", function () {
+
+    const backToTop = document.getElementById("backToTop");
+
+    if (!backToTop) return;
+
+    window.addEventListener("scroll", function () {
+
+        if (window.scrollY > 300) {
+            backToTop.classList.add("show");
+        } else {
+            backToTop.classList.remove("show");
+        }
+
+    });
+
+    backToTop.addEventListener("click", function () {
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+    });
+
+});
+
+
+
+// ==========================================
+// WEBSITE-WIDE PORTFOLIO SEARCH
+// ==========================================
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const searchInput = document.getElementById("portfolioSearch");
+    const searchButton = document.getElementById("searchBtn");
+    const searchResults = document.getElementById("searchResults");
+
+    if (!searchInput || !searchButton || !searchResults) return;
+
+    // Website elements to search
+    const searchableElements = [
+        "h1", "h2", "h3", "h4", "h5", "h6",
+        "p", "li", "a", "button", "summary",
+        "label", ".hobby-card"
+    ];
+
+    function searchWebsite() {
+
+        const query = searchInput.value.trim().toLowerCase();
+
+        searchResults.innerHTML = "";
+
+        if (!query) {
+            searchResults.style.display = "none";
+            return;
+        }
+
+        const searchWords = query.split(/\s+/).filter(Boolean);
+
+        const elements = document.querySelectorAll(
+            searchableElements.join(",")
+        );
+
+        let matches = [];
+
+        elements.forEach(element => {
+
+            // Ignore the search bar and its results
+            if (
+                element.closest(".search-container") ||
+                element.closest("#searchResults")
+            ) return;
+
+            const text = element.textContent.trim();
+
+            if (!text) return;
+
+            const normalizedText = text.toLowerCase();
+
+            // Require all searched words to match
+            const isMatch = searchWords.every(word =>
+                normalizedText.includes(word)
+            );
+
+            if (isMatch) {
+
+                // Avoid duplicate results from nested elements
+                const alreadyAdded = matches.some(
+                    item => item.element === element
+                );
+
+                if (!alreadyAdded) {
+                    matches.push({
+                        element: element,
+                        text: text
+                    });
+                }
+            }
+
+        });
+
+        if (matches.length === 0) {
+
+            searchResults.innerHTML = `
+                <div class="search-no-results">
+                    No results found for "${query}"
+                </div>
+            `;
+
+            searchResults.style.display = "block";
+            return;
+        }
+
+        matches.forEach(match => {
+
+            const result = document.createElement("div");
+
+            result.className = "search-result-item";
+            result.textContent = match.text.length > 100
+                ? match.text.substring(0, 100) + "..."
+                : match.text;
+
+            result.addEventListener("click", function () {
+
+                match.element.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+
+                searchResults.style.display = "none";
+
+            });
+
+            searchResults.appendChild(result);
+
+        });
+
+        searchResults.style.display = "block";
+
+    }
+
+    searchInput.addEventListener("input", searchWebsite);
+
+    searchButton.addEventListener("click", searchWebsite);
+
+    searchInput.addEventListener("keydown", function (event) {
+
+        if (event.key === "Enter") {
+            searchWebsite();
+        }
+
+        if (event.key === "Escape") {
+            searchResults.style.display = "none";
+        }
+
+    });
+
+    document.addEventListener("click", function (event) {
+
+        if (!event.target.closest(".search-container")) {
+            searchResults.style.display = "none";
+        }
+
+    });
+
+});
+
+// CREATOR ONLINE STATUS
+const creatorPopup = document.getElementById("creatorOnlinePopup");
+const closeCreatorPopup = document.getElementById("closeCreatorPopup");
+
+let creatorPopupDismissed = false;
+
+if (creatorPopup && closeCreatorPopup) {
+
+    closeCreatorPopup.addEventListener("click", function() {
+        creatorPopup.style.display = "none";
+        creatorPopupDismissed = true;
+    });
+
+    async function checkCreatorStatus() {
+        try {
+            const response = await fetch(`${API_URL}/creator/status`, {
+                method: "GET",
+                cache: "no-store"
+            });
+
+            const data = await response.json();
+
+            console.log("CREATOR STATUS:", data);
+
+            if (data.is_online) {
+                if (!creatorPopupDismissed) {
+                    creatorPopup.style.display = "block";
+                }
+            } else {
+                creatorPopup.style.display = "none";
+                creatorPopupDismissed = false;
+            }
+
+        } catch (error) {
+            console.error("Creator status error:", error);
+            creatorPopup.style.display = "none";
+        }
+    }
+
+    checkCreatorStatus();
+    setInterval(checkCreatorStatus, 10000);
 }
