@@ -1051,6 +1051,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Check if user already accepted during this session
         if (sessionStorage.getItem("jundyAIUsageAccepted") === "true") {
             chatWindow.classList.add("active");
+            loadChatHistory();
             return;
         }
 
@@ -1058,6 +1059,7 @@ document.addEventListener("DOMContentLoaded", function () {
         showAIUsageNotice(() => {
             updateChatbotWelcome();
             chatWindow.classList.add("active");
+            loadChatHistory();
         });
 
     });
@@ -1173,9 +1175,8 @@ document.addEventListener("DOMContentLoaded", function () {
 // ===============================
 
 
-function addChatMessage(message, sender) {
-
-    const messageElement = document.createElement("div");
+function addChatMessage(message, sender, shouldScroll = true, createdAt = null) {  
+      const messageElement = document.createElement("div");
 
     messageElement.classList.add(
         sender === "user" ? "user-message" : "bot-message"
@@ -1236,7 +1237,31 @@ function addChatMessage(message, sender) {
         messageElement.textContent = message;
     }
 
+    // MESSAGE DATE AND TIME
+    const timestampElement = document.createElement("div");
+    timestampElement.className = "chat-message-timestamp";
+
+    timestampElement.textContent = (createdAt
+    ? new Date(new Date(createdAt).getTime() + (8 * 60 * 60 * 1000))
+    : new Date()).toLocaleString(
+        "en-PH",
+        {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+            timeZone: "Asia/Manila"
+        }
+    );
+
     messages.appendChild(messageElement);
+    messages.appendChild(timestampElement);
+
+    if (shouldScroll) {
+        messages.scrollTop = messages.scrollHeight;
+    }
     messages.scrollTop = messages.scrollHeight;
 }
 
@@ -1365,6 +1390,57 @@ function addChatMessage(message, sender) {
 
     // STORE CHAT CONVERSATION
     let conversationHistory = [];
+
+    // LOAD SAVED CHAT HISTORY FROM DATABASE
+    let chatHistoryLoaded = false;
+
+    async function loadChatHistory() {
+        console.log("LOAD CHAT HISTORY FUNCTION CALLED!");
+
+        if (chatHistoryLoaded) return;
+
+        try {
+            const response = await fetch(
+                `${API_URL}/chat/history?visitor_id=${encodeURIComponent(getVisitorId())}`
+            );
+
+            if (!response.ok) {
+                throw new Error("Unable to load chat history.");
+            }
+
+            const data = await response.json();
+
+            if (!Array.isArray(data.messages)) {
+                throw new Error("Invalid chat history response.");
+            }
+
+            data.messages.forEach(message => {
+
+                conversationHistory.push({
+                    role: message.role,
+                    content: message.content
+                });
+
+                addChatMessage(
+                    message.content,
+                    message.role === "user" ? "user" : "bot",
+                    false,
+                    message.created_at
+                );
+
+            });
+
+            messages.scrollTop = messages.scrollHeight;
+
+            chatHistoryLoaded = true;
+
+            console.log("CHAT HISTORY LOADED:", data.messages.length);
+
+        } catch (error) {
+            console.error("CHAT HISTORY ERROR:", error);
+        }
+    }
+
 
     // ==========================================
     // SEND MESSAGE TO AI CHATBOT
@@ -1672,8 +1748,9 @@ document.addEventListener("mousemove", function(event) {
 
     });
 
-    
+console.log("JUNDY CHAT SCRIPT INITIALIZED");  
 });
+
 
 // UNBLUR PROFILE WHEN GET IN TOUCH IS CLICKED
 

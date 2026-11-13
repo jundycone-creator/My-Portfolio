@@ -4987,3 +4987,17 @@ a {
     visibility: hidden !important;
     pointer-events: none !important;
 }
+
+/* CHAT MESSAGE TIMESTAMP */
+.chat-message-timestamp {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 9px;
+    color: #888;
+    margin-top: 1px;
+    margin-bottom: 6px;
+    padding: 0 8px;
+    line-height: 1.1;
+    text-align: center;
+}

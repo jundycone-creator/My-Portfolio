@@ -215,7 +215,7 @@
 
             .management-navigation {
                 display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
+                grid-template-columns: repeat(4, minmax(0, 1fr));
                 gap: 12px;
                 margin: 20px 0;
             }
@@ -534,6 +534,135 @@
                 text-align: right;
             }
 
+            /* CONVERSATION MONITORING */
+
+            .conversation-layout {
+                display: grid;
+                grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+                gap: 16px;
+                min-height: 520px;
+            }
+
+            .conversation-visitor-panel,
+            .conversation-chat-panel {
+                min-width: 0;
+                padding: 16px;
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                background: rgba(8, 8, 10, 0.55);
+            }
+
+            #conversationSearch {
+                width: 100%;
+                margin-bottom: 14px;
+            }
+
+            #conversationVisitorList {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                max-height: 600px;
+                overflow-y: auto;
+            }
+
+            .conversation-visitor-item {
+                width: 100%;
+                text-align: left;
+                border: 1px solid var(--border);
+                background: rgba(255, 255, 255, 0.025);
+                border-radius: 10px;
+                padding: 12px;
+                color: inherit;
+                cursor: pointer;
+            }
+
+            .conversation-visitor-item:hover,
+            .conversation-visitor-item.active {
+                border-color: rgba(255, 59, 67, 0.7);
+                background: rgba(150, 10, 20, 0.2);
+            }
+
+            .conversation-visitor-item small {
+                display: block;
+                color: var(--muted);
+                margin-top: 4px;
+                overflow-wrap: anywhere;
+            }
+
+            #conversationHeader {
+                margin-bottom: 14px;
+            }
+
+            #conversationMessages {
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                max-height: 600px;
+                overflow-y: auto;
+                padding: 12px;
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                background: #09090b;
+            }
+
+            .conversation-message {
+                display: inline-block;
+                flex: 0 1 auto;
+                width: fit-content;
+                max-width: 10%;
+                align-self: flex-start;
+                padding: 4px 8px;
+                border-radius: 10px;
+                overflow-wrap: anywhere;
+                white-space: pre-wrap;
+            }
+
+            .conversation-message.user {
+                align-self: flex-end;
+                background: rgba(150, 10, 20, 0.35);
+                border: 1px solid rgba(255, 59, 67, 0.25);
+            }
+
+            .conversation-message.assistant {
+                align-self: flex-start;
+                background: #202024;
+                border: 1px solid var(--border);
+            }
+
+            .conversation-message .message-role {
+                display: block;
+                color: #ff858a;
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                margin-bottom: 5px;
+            }
+
+            .conversation-message-time {
+                display: block;
+                color: var(--muted);
+                font-size: 10px;
+                margin-top: 6px;
+            }
+
+            @media (max-width: 760px) {
+                .conversation-layout {
+                    grid-template-columns: 1fr;
+                }
+
+                #conversationVisitorList {
+                    max-height: 260px;
+                }
+
+                #conversationMessages {
+                    max-height: 500px;
+                }
+
+                .conversation-message {
+                    max-width: 85%;
+                }
+}
+
             @media (max-width: 760px) {
                 body {
                     padding: 20px 14px;
@@ -664,6 +793,227 @@
                 opacity: 0;
                 overflow: hidden !important;
             }
+
+            /* ==========================================
+            CONVERSATION MONITORING
+            ========================================== */
+
+            .conversation-layout {
+                display: grid;
+                grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+                gap: 18px;
+                align-items: start;
+            }
+
+            .conversation-sidebar,
+            .conversation-viewer {
+                min-width: 0;
+                padding: 18px;
+                border: 1px solid var(--border);
+                border-radius: 15px;
+                background: rgba(8, 8, 10, .65);
+            }
+
+            .conversation-search {
+                margin: 12px 0;
+            }
+
+            .conversation-list {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                max-height: 620px;
+                overflow-y: auto;
+            }
+
+            .conversation-visitor {
+                width: 100%;
+                padding: 13px;
+                border: 1px solid rgba(255,255,255,.08);
+                border-radius: 10px;
+                background: rgba(255,255,255,.025);
+                color: #eee;
+                text-align: left;
+            }
+
+            .conversation-visitor:hover,
+            .conversation-visitor.active {
+                border-color: rgba(255,59,67,.65);
+                background: rgba(150,10,20,.16);
+            }
+
+            .conversation-visitor strong {
+                display: block;
+                font-size: 13px;
+                overflow-wrap: anywhere;
+            }
+
+            .conversation-visitor small {
+                display: block;
+                margin-top: 5px;
+                color: var(--muted);
+                font-size: 11px;
+            }
+
+            .conversation-viewer-header {
+                padding-bottom: 15px;
+                margin-bottom: 15px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .conversation-viewer-header h3 {
+                font-size: 17px;
+                overflow-wrap: anywhere;
+            }
+
+            .conversation-viewer-header p {
+                margin-top: 5px;
+                color: var(--muted);
+                font-size: 11px;
+                overflow-wrap: anywhere;
+            }
+
+            .conversation-messages {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+                max-height: 650px;
+                min-height: 300px;
+                padding: 12px;
+                overflow-y: auto;
+                border: 1px solid rgba(255,255,255,.06);
+                border-radius: 12px;
+                background: #08080a;
+            }
+
+            .conversation-message {
+                display: block;
+                flex: 0 1 auto;
+                width: max-content;
+                max-width: 42%;
+                padding: 4px 8px;
+                border-radius: 10px;
+                font-size: 12px;
+                line-height: 1.45;
+                overflow-wrap: anywhere;
+                white-space: pre-wrap;
+            }
+
+            .conversation-message.user {
+                align-self: flex-end;
+                border: 1px solid rgba(255,59,67,.25);
+                border-bottom-right-radius: 4px;
+                background: rgba(150,10,20,.25);
+                color: #fff;
+            }
+
+            .conversation-message.assistant {
+                align-self: flex-start;
+                border: 1px solid rgba(255,255,255,.09);
+                border-bottom-left-radius: 4px;
+                background: #1c1c21;
+                color: #eee;
+            }
+
+            .conversation-message.system {
+                align-self: center;
+                background: #25252b;
+                color: #aaa;
+            }
+
+            .conversation-message-time {
+                display: block;
+                margin-top: 5px;
+                color: #999;
+                font-size: 9px;
+                text-align: right;
+            }
+
+            .conversation-empty {
+                display: flex;
+                min-height: 250px;
+                align-items: center;
+                justify-content: center;
+                color: var(--muted);
+                font-size: 13px;
+                text-align: center;
+            }
+
+            .conversation-count {
+                color: var(--red-bright);
+                font-size: 11px;
+                font-weight: 700;
+            }
+
+            @media (max-width: 760px) {
+                .conversation-layout {
+                    grid-template-columns: 1fr;
+                }
+
+                .conversation-list {
+                    max-height: 280px;
+                }
+
+                .conversation-messages {
+                    min-height: 350px;
+                    max-height: 550px;
+                }
+
+                .conversation-message {
+                    max-width: 92%;
+                }
+            }
+
+            /* FIX CONVERSATION MESSAGE HEIGHT */
+
+            #conversationMessages {
+                align-items: flex-start;
+            }
+
+            #conversationMessages .conversation-message {
+                display: block !important;
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                flex: 0 0 auto !important;
+                justify-content: flex-start !important;
+                padding: 10px 12px !important;
+                margin: 0 !important;
+                box-sizing: border-box;
+            }
+
+            #conversationMessages .message-role {
+                margin: 0 0 4px !important;
+            }
+
+            #conversationMessages .message-content {
+                margin: 0 !important;
+            }
+
+            #conversationMessages .conversation-message-time {
+                margin-top: 5px !important;
+            }
+
+            #conversationMessages .conversation-message > div {
+                display: block !important;
+                width: auto !important;
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                flex: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                line-height: 1.4 !important;
+            }
+
+            #conversationMessages .conversation-message {
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: flex-start !important;
+                gap: 3px !important;
+                height: auto !important;
+                min-height: 0 !important;
+            }
         </style>
     </head>
 
@@ -737,6 +1087,9 @@
                 <button type="button" class="management-tab" data-section="appealSection">
                     <span>Appeal Requests</span>
                     <span class="notification-count" id="appealNotification" hidden>0</span>
+                </button>
+                <button type="button" class="management-tab" data-section="conversationSection">
+                    <span>Conversation Monitoring</span>
                 </button>
             </nav>
 
@@ -905,9 +1258,126 @@
                 </div>
             </section>
 
+            <!-- CONVERSATION MONITORING -->
+            <section id="conversationSection" class="management-section">
+
+                <div class="section-panel">
+
+                    <div class="section-heading">
+                        <div>
+                            <h3>Conversation Monitoring</h3>
+                            <p>Search visitors and review their complete chatbot conversation history.</p>
+                        </div>
+                    </div>
+
+                    <div class="conversation-layout">
+
+                        <div class="conversation-visitor-panel">
+                            <input
+                                type="search"
+                                id="conversationSearch"
+                                placeholder="Search visitor name or device..."
+                                autocomplete="off"
+                            >
+
+                            <div id="conversationVisitorList">
+                                <p>Select a visitor to view conversations.</p>
+                            </div>
+                        </div>
+
+                        <div class="conversation-chat-panel">
+
+                            <div id="conversationHeader">
+                                <h3>Select a visitor</h3>
+                                <p>Conversation history will appear here.</p>
+                            </div>
+
+                            <div id="conversationMessages" class="conversation-messages">
+                                <p class="conversation-empty">No conversation selected.</p>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            </section>
             <p id="dashboardMessage" role="status" aria-live="polite"></p>
         </section>
+        <!-- CONVERSATION MONITORING -->
+        <section id="conversationSection" class="management-section">
 
+            <div class="section-panel">
+
+                <div class="section-heading">
+                    <div>
+                        <h3>Conversation Monitoring</h3>
+                        <p>View visitor chat history and individual messages.</p>
+                    </div>
+
+                    <button type="button" class="secondary"
+                        id="refreshConversations">
+                        Refresh Conversations
+                    </button>
+                </div>
+
+                <div class="conversation-layout">
+
+                    <!-- VISITOR LIST -->
+                    <div class="conversation-sidebar">
+
+                        <h3>Visitors</h3>
+
+                        <input
+                            type="text"
+                            id="conversationSearch"
+                            class="conversation-search"
+                            placeholder="Search visitor name or device..."
+                        >
+
+                        <div id="conversationVisitorList"
+                            class="conversation-list">
+
+                            <div class="conversation-empty">
+                                Loading visitors...
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- CHAT HISTORY -->
+                    <div class="conversation-viewer">
+
+                        <div class="conversation-viewer-header">
+                            <h3 id="conversationVisitorName">
+                                Select a visitor
+                            </h3>
+
+                            <p id="conversationVisitorDetails">
+                                Choose a visitor from the list to view their chat history.
+                            </p>
+
+                            <span id="conversationMessageCount"
+                                class="conversation-count"></span>
+                        </div>
+
+                        <div id="conversationMessages"
+                            class="conversation-messages">
+
+                            <div class="conversation-empty">
+                                Select a visitor to view conversation history.
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
     <script>
         const API_URL = window.location.hostname === "127.0.0.1" ||
                     window.location.hostname === "localhost"
@@ -939,6 +1409,8 @@
         let cachedVisitors = [];
         let cachedResumeRequests = [];
         let cachedAppeals = [];
+        let selectedConversationVisitorId = null;
+        let allConversationVisitors = [];   
 
         function getSeenIds(storageKey) {
             try {
@@ -1061,6 +1533,7 @@
                 const result = await apiRequest("/admin/visitors");
 
             const allVisitors = result.visitors || [];
+            cachedVisitors = allVisitors;
             const visitors = showAllVisitors
                 ? allVisitors
                 : allVisitors.slice(0, 10);
@@ -1479,6 +1952,51 @@
     }
 
 
+        function renderConversationVisitors(filter = "") {
+
+        const list = document.getElementById("conversationVisitorList");
+        const normalized = filter.trim().toLowerCase();
+
+        const filtered = allConversationVisitors.filter(visitor => {
+            const searchableText = `
+                ${visitor.visitor_name || ""}
+                ${visitor.device_label || ""}
+                ${visitor.visitor_id || ""}
+            `.toLowerCase();
+
+            return searchableText.includes(normalized);
+        });
+
+        if (!filtered.length) {
+            list.innerHTML = `<p>No matching visitors found.</p>`;
+            return;
+        }
+
+        list.innerHTML = filtered.map(visitor => `
+            <button
+                type="button"
+                class="conversation-visitor-item ${
+                    visitor.visitor_id === selectedConversationVisitorId ? "active" : ""
+                }"
+                data-visitor-id="${escapeHTML(visitor.visitor_id)}">
+
+                <strong>
+                    ${escapeHTML(visitor.visitor_name || "Unnamed Visitor")}
+                </strong>
+
+                <small>
+                    ${escapeHTML(visitor.device_label || "Unnamed Device")}
+                </small>
+
+                <small>
+                    ${escapeHTML(visitor.visitor_id)}
+                </small>
+
+            </button>
+        `).join("");
+    }
+
+
     // UPDATE APPEAL STATUS
     async function updateAppealStatus(appealId, status) {
 
@@ -1546,6 +2064,8 @@
                 await loadVisitors();
                 await loadResumeRequests();
                 await loadAppealRequests();
+                await loadConversations();
+                await loadConversationVisitors();
 
             } catch (error) {
                 message.textContent = error.message;
@@ -1556,6 +2076,8 @@
             await loadVisitors();
             await loadResumeRequests();
             await loadAppealRequests();
+            await loadConversations();
+            await loadConversationVisitors();
         });
 
         document.getElementById("logoutButton").addEventListener("click", async function() {
@@ -1861,10 +2383,486 @@
                         "appealNotification"
                     );
                 }
+                else if (targetSection === "conversationSection") {
+                    await loadConversations();
+                }
             });
         });
 
         checkAdminSession();
+        // ==========================================
+        // CONVERSATION MONITORING
+        // ==========================================
+
+        let conversationVisitors = [];
+        let selectedConversationVisitor = null;
+
+
+        // LOAD VISITOR LIST AND MESSAGE COUNTS
+        async function loadConversations() {
+
+            const visitorList = document.getElementById(
+                "conversationVisitorList"
+            );
+
+            visitorList.innerHTML = `
+                <div class="conversation-empty">
+                    Loading conversations...
+                </div>
+            `;
+
+            try {
+
+                const result = await apiRequest("/admin/visitors");
+
+                const visitors = result.visitors || [];
+
+                // Retrieve message counts for each visitor.
+                const conversationResults = await Promise.all(
+                    visitors.map(async visitor => {
+
+                        try {
+
+                            const history = await apiRequest(
+                                `/admin/conversations/${encodeURIComponent(visitor.visitor_id)}`
+                            );
+
+                            return {
+                                ...visitor,
+                                message_count: history.total_messages || 0
+                            };
+
+                        } catch (error) {
+
+                            console.error(
+                                "Unable to retrieve conversation:",
+                                visitor.visitor_id,
+                                error
+                            );
+
+                            return {
+                                ...visitor,
+                                message_count: 0
+                            };
+                        }
+
+                    })
+                );
+
+                conversationVisitors = conversationResults;
+
+                renderConversationVisitors();
+                async function loadConversationVisitors() {
+
+                    const list = document.getElementById("conversationVisitorList");
+
+                    list.innerHTML = `<p>Loading visitors...</p>`;
+
+                    try {
+                        const result = await apiRequest("/admin/visitors");
+
+                        allConversationVisitors = result.visitors || [];
+
+                        renderConversationVisitors(
+                            document.getElementById("conversationSearch").value
+                        );
+
+                    } catch (error) {
+
+                        list.textContent = error.message;
+
+                    }
+                }
+
+                function formatConversationTime(value) {
+
+                    if (!value) return "Time unavailable";
+
+                    const date = new Date(value);
+
+                    if (isNaN(date.getTime())) {
+                        return "Time unavailable";
+                    }
+
+                    return date.toLocaleString("en-PH", {
+                        timeZone: "Asia/Manila",
+                        year: "numeric",
+                        month: "short",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: true
+                    });
+                }
+
+                async function loadConversationHistory(visitorId) {
+
+                    selectedConversationVisitorId = visitorId;
+
+                    renderConversationVisitors(
+                        document.getElementById("conversationSearch").value
+                    );
+
+                    const header = document.getElementById("conversationHeader");
+                    const messages = document.getElementById("conversationMessages");
+
+                    header.innerHTML = `<h3>Loading conversation...</h3>`;
+                    messages.innerHTML = `<p>Loading messages...</p>`;
+
+                    try {
+
+                        const result = await apiRequest(
+                            `/admin/conversations/${encodeURIComponent(visitorId)}`
+                        );
+
+                        const visitor = result.visitor || {};
+
+                        header.innerHTML = `
+                            <h3>${escapeHTML(visitor.visitor_name || "Unnamed Visitor")}</h3>
+                            <p>
+                                ${escapeHTML(visitor.device_label || "Unnamed Device")}
+                                ·
+                                ${escapeHTML(visitor.browser_name || "Unknown Browser")}
+                            </p>
+                            <p>${escapeHTML(result.total_messages || 0)} messages</p>
+                        `;
+
+                        if (!result.messages || !result.messages.length) {
+                            messages.innerHTML = `
+                                <p class="conversation-empty">
+                                    No messages recorded for this visitor.
+                                </p>
+                            `;
+                            return;
+                        }
+
+                        messages.innerHTML = result.messages.map(item => {
+
+                            const role = item.role === "user" ? "user" : "assistant";
+
+                            return `
+                                <div class="conversation-message ${role}">
+                                    <span class="message-role">${escapeHTML(item.role)}</span>
+                                    <div class="message-content">${escapeHTML(item.content)}</div>
+                                    <span class="conversation-message-time">${escapeHTML(formatConversationTime(item.created_at))}</span>
+                                </div>
+                            `;
+
+                        }).join("");
+
+                        messages.scrollTop = messages.scrollHeight;
+
+                    } catch (error) {
+
+                        header.innerHTML = `<h3>Unable to load conversation</h3>`;
+                        messages.textContent = error.message;
+
+                    }
+                }
+
+                // CONVERSATION MONITORING EVENT LISTENERS
+
+                document.getElementById("conversationSearch").addEventListener("input", function () {
+
+                    renderConversationVisitors(this.value);
+
+                });
+
+                document.getElementById("conversationVisitorList").addEventListener("click", function (event) {
+
+                    const button = event.target.closest(".conversation-visitor-item");
+
+                    if (!button) return;
+
+                    loadConversationHistory(button.dataset.visitorId);
+
+                });
+
+            } catch (error) {
+
+                visitorList.innerHTML = `
+                    <div class="conversation-empty">
+                        ${escapeHTML(error.message)}
+                    </div>
+                `;
+
+            }
+        }
+
+
+        // DISPLAY VISITOR LIST
+        function renderConversationVisitors() {
+
+            const visitorList = document.getElementById(
+                "conversationVisitorList"
+            );
+
+            const searchInput = document.getElementById(
+                "conversationSearch"
+            );
+
+            const search = searchInput.value.toLowerCase().trim();
+
+            const filteredVisitors = conversationVisitors.filter(visitor => {
+
+                const name = (visitor.visitor_name || "").toLowerCase();
+                const device = (visitor.device_label || "").toLowerCase();
+                const visitorId = (visitor.visitor_id || "").toLowerCase();
+
+                return (
+                    name.includes(search) ||
+                    device.includes(search) ||
+                    visitorId.includes(search)
+                );
+
+            });
+
+            if (filteredVisitors.length === 0) {
+
+                visitorList.innerHTML = `
+                    <div class="conversation-empty">
+                        No matching visitors found.
+                    </div>
+                `;
+
+                return;
+            }
+
+            visitorList.innerHTML = filteredVisitors.map(visitor => {
+
+                const isActive =
+                    selectedConversationVisitor === visitor.visitor_id;
+
+                return `
+                    <button
+                        type="button"
+                        class="conversation-visitor ${isActive ? "active" : ""}"
+                        data-visitor-id="${escapeHTML(visitor.visitor_id)}">
+
+                        <strong>
+                            ${escapeHTML(visitor.visitor_name || "Unnamed Visitor")}
+                        </strong>
+
+                        <small>
+                            ${escapeHTML(visitor.device_label || "Unnamed Device")}
+                        </small>
+
+                        <small>
+                            ${escapeHTML(visitor.browser_name || "Unknown Browser")}
+                            · ${visitor.message_count} messages
+                        </small>
+
+                    </button>
+                `;
+
+            }).join("");
+
+        }
+
+
+        // LOAD SELECTED VISITOR'S CHAT HISTORY
+        async function loadConversationHistory(visitorId) {
+
+            const messagesContainer = document.getElementById(
+                "conversationMessages"
+            );
+
+            const nameElement = document.getElementById(
+                "conversationVisitorName"
+            );
+
+            const detailsElement = document.getElementById(
+                "conversationVisitorDetails"
+            );
+
+            const countElement = document.getElementById(
+                "conversationMessageCount"
+            );
+
+            const visitor = conversationVisitors.find(
+                item => item.visitor_id === visitorId
+            );
+
+            if (!visitor) return;
+
+            selectedConversationVisitor = visitorId;
+
+            renderConversationVisitors();
+
+            nameElement.textContent =
+                visitor.visitor_name || "Unnamed Visitor";
+
+            detailsElement.textContent =
+                `${visitor.device_label || "Unnamed Device"} · ${visitor.browser_name || "Unknown Browser"} · ID: ${visitor.visitor_id}`;
+
+            messagesContainer.innerHTML = `
+                <div class="conversation-empty">
+                    Loading chat history...
+                </div>
+            `;
+
+            try {
+
+                const result = await apiRequest(
+                    `/admin/conversations/${encodeURIComponent(visitorId)}`
+                );
+
+                const messages = result.messages || [];
+
+                countElement.textContent =
+                    `${result.total_messages || 0} total messages`;
+
+                if (messages.length === 0) {
+
+                    messagesContainer.innerHTML = `
+                        <div class="conversation-empty">
+                            This visitor has no recorded conversations yet.
+                        </div>
+                    `;
+
+                    return;
+                }
+
+                messagesContainer.innerHTML = messages.map(message => {
+
+                    const role = ["user", "assistant", "system"].includes(
+                        message.role
+                    ) ? message.role : "system";
+
+                    const timestamp = formatConversationTime(
+                        message.created_at
+                    );
+
+                    return `
+                        <div class="conversation-message ${role}">
+
+                            ${escapeHTML(message.content)}
+
+                            <span class="conversation-message-time">
+                                ${escapeHTML(timestamp)}
+                            </span>
+
+                        </div>
+                    `;
+
+                }).join("");
+
+                // Scroll to the most recent message.
+                messagesContainer.scrollTop =
+                    messagesContainer.scrollHeight;
+
+            } catch (error) {
+
+                messagesContainer.innerHTML = `
+                    <div class="conversation-empty">
+                        Unable to load conversation history:
+                        ${escapeHTML(error.message)}
+                    </div>
+                `;
+
+            }
+
+        }
+
+
+        // FORMAT ORIGINAL DATABASE TIMESTAMP
+        function formatConversationTime(value) {
+
+            if (!value) return "Unknown time";
+
+            const date = new Date(value);
+
+            if (isNaN(date.getTime())) {
+                return "Unknown time";
+            }
+
+            return date.toLocaleString("en-PH", {
+                timeZone: "Asia/Manila",
+                year: "numeric",
+                month: "short",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: true
+            });
+
+        }
+
+
+        // CLICK VISITOR
+        document.getElementById("conversationVisitorList")
+            .addEventListener("click", function(event) {
+
+                const button = event.target.closest(
+                    ".conversation-visitor"
+                );
+
+                if (!button) return;
+
+                loadConversationHistory(
+                    button.dataset.visitorId
+                );
+
+            });
+
+
+        // SEARCH VISITORS
+        document.getElementById("conversationSearch")
+            .addEventListener("input", function() {
+
+                renderConversationVisitors();
+
+            });
+
+
+        // REFRESH CONVERSATIONS
+        document.getElementById("refreshConversations")
+            .addEventListener("click", async function() {
+
+                await loadConversations();
+
+                if (selectedConversationVisitor) {
+
+                    const stillExists = conversationVisitors.some(
+                        visitor =>
+                            visitor.visitor_id === selectedConversationVisitor
+                    );
+
+                    if (stillExists) {
+                        await loadConversationHistory(
+                            selectedConversationVisitor
+                        );
+                    } else {
+
+                        selectedConversationVisitor = null;
+
+                        document.getElementById(
+                            "conversationVisitorName"
+                        ).textContent = "Select a visitor";
+
+                        document.getElementById(
+                            "conversationVisitorDetails"
+                        ).textContent =
+                            "Choose a visitor from the list to view their chat history.";
+
+                        document.getElementById(
+                            "conversationMessageCount"
+                        ).textContent = "";
+
+                        document.getElementById(
+                            "conversationMessages"
+                        ).innerHTML = `
+                            <div class="conversation-empty">
+                                Select a visitor to view conversation history.
+                            </div>
+                        `;
+                    }
+
+                }
+
+            });
 
     function updatePhilippineClock() {
     const clock = document.getElementById("philippineLiveClock");

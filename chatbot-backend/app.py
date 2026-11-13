@@ -168,6 +168,65 @@ class VisitorAccess(db.Model):
     )
 
 
+
+class ChatConversation(db.Model):
+    __tablename__ = "chat_conversations"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    visitor_id = db.Column(
+        db.String(64),
+        db.ForeignKey("visitor_access.visitor_id"),
+        nullable=False,
+        unique=True,
+        index=True
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(PHILIPPINE_TIMEZONE),
+        nullable=False
+    )
+
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(PHILIPPINE_TIMEZONE),
+        onupdate=lambda: datetime.now(PHILIPPINE_TIMEZONE),
+        nullable=False
+    )
+
+
+class ChatMessage(db.Model):
+    __tablename__ = "chat_messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    conversation_id = db.Column(
+        db.Integer,
+        db.ForeignKey("chat_conversations.id"),
+        nullable=False,
+        index=True
+    )
+
+    role = db.Column(
+        db.String(20),
+        nullable=False
+    )
+
+    content = db.Column(
+        db.Text,
+        nullable=False
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(PHILIPPINE_TIMEZONE),
+        nullable=False,
+        index=True
+    )
+
+
+
 class SpecialVisitor(db.Model):
     __tablename__ = "special_visitors"
 
@@ -184,6 +243,44 @@ class SpecialVisitor(db.Model):
         default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
+
+
+def get_or_create_chat_conversation(visitor_id):
+    conversation = ChatConversation.query.filter_by(
+        visitor_id=visitor_id
+    ).first()
+
+    if not conversation:
+        conversation = ChatConversation(
+            visitor_id=visitor_id
+        )
+
+        db.session.add(conversation)
+        db.session.commit()
+
+    return conversation
+
+
+def save_chat_message(visitor_id, role, content):
+    if role not in ["user", "assistant"]:
+        return
+
+    if not isinstance(content, str) or not content.strip():
+        return
+
+    conversation = get_or_create_chat_conversation(visitor_id)
+
+    message = ChatMessage(
+        conversation_id=conversation.id,
+        role=role,
+        content=content.strip()
+    )
+
+    conversation.updated_at = datetime.now(PHILIPPINE_TIMEZONE)
+
+    db.session.add(message)
+    db.session.commit()
+
 
 # ==========================================
 # ADMIN / CREATOR ONLINE STATUS
@@ -764,6 +861,7 @@ def admin_visitors():
     })
 
 
+
 @app.route("/admin/special-visitors", methods=["GET"])
 @admin_required
 def get_special_visitors():
@@ -1054,6 +1152,68 @@ def update_visitor_access():
     except Exception:
         db.session.rollback()
         raise
+
+
+@app.route("/admin/conversations/<visitor_id>", methods=["GET"])
+@admin_required
+def admin_conversation_history(visitor_id):
+
+    visitor = VisitorAccess.query.filter_by(
+        visitor_id=visitor_id
+    ).first()
+
+    if not visitor:
+        return jsonify({
+            "success": False,
+            "error": "Visitor not found"
+        }), 404
+
+    conversation = ChatConversation.query.filter_by(
+        visitor_id=visitor_id
+    ).first()
+
+    if not conversation:
+        return jsonify({
+            "success": True,
+            "visitor": {
+                "visitor_id": visitor.visitor_id,
+                "visitor_name": visitor.visitor_name,
+                "device_label": visitor.device_label,
+                "browser_name": visitor.browser_name
+            },
+            "total_messages": 0,
+            "messages": []
+        })
+
+    messages = ChatMessage.query.filter_by(
+        conversation_id=conversation.id
+    ).order_by(
+        ChatMessage.created_at.asc()
+    ).all()
+
+    conversation_messages = []
+
+    for message in messages:
+        conversation_messages.append({
+            "role": message.role,
+            "content": message.content,
+            "created_at": (
+                message.created_at.isoformat()
+                if message.created_at else None
+            )
+        })
+
+    return jsonify({
+        "success": True,
+        "visitor": {
+            "visitor_id": visitor.visitor_id,
+            "visitor_name": visitor.visitor_name,
+            "device_label": visitor.device_label,
+            "browser_name": visitor.browser_name
+        },
+        "total_messages": len(conversation_messages),
+        "messages": conversation_messages
+    })
 
 
 def send_resume_request_notification(resume_request):
@@ -2014,18 +2174,32 @@ def chat():
 
         remaining_questions = DAILY_QUESTION_LIMIT - used_questions
 
+        # SAVE VISITOR MESSAGE
+        save_chat_message(
+            visitor_id,
+            "user",
+            user_message
+        )
+
                 # GOOGLE MAPS RESPONSE (AFTER ACCESS AND ABUSE CHECKS)
         normalized_map_message = user_message.lower().strip()
 
         if any(keyword in normalized_map_message for keyword in [
             "location", "where", "address", "map"
         ]):
+            map_reply = (
+                "You can find Jundytech Solutions here: "
+                "https://www.google.com/maps/search/"
+                "?api=1&query=Jundytech+Solutions"
+            )
+
+            save_chat_message(
+                visitor_id,
+                "assistant",
+                map_reply
+            )
             return jsonify({
-                "reply": (
-                    "You can find Jundytech Solutions here: "
-                    "https://www.google.com/maps/search/"
-                    "?api=1&query=Jundytech+Solutions"
-                ),
+                "reply": map_reply,
                 "limit": DAILY_QUESTION_LIMIT,
                 "used": used_questions,
                 "remaining": remaining_questions,
@@ -2127,6 +2301,12 @@ def chat():
                 f"(Asia/Manila, UTC+8)."
             )
 
+            save_chat_message(
+                visitor_id,
+                "assistant",
+                reply
+            )
+
             print("JUNDY AI DIRECT TIME RESPONSE:", reply)
 
             return jsonify({
@@ -2184,11 +2364,11 @@ def chat():
             - Do not make every conversation romantic.
 
             PERSONALIZED NAME:
-            - Use the special visitor's registered name when it is available.
-            - Address her by name naturally in greetings and conversations.
-            - Occasionally include her name in sweet or affectionate replies.
-            - Do not use her name in every sentence.
-            - Never guess, invent, or misspell her name.
+            - Always address the special visitor as "Love".
+            - Use "Love" naturally in greetings and affectionate conversations.
+            - Never call her by her registered name unless she specifically asks.
+            - Do not overuse "Love" in every sentence.
+            - Keep the tone sweet, affectionate, and sincere.
 
             NATURAL LAUGHTER AND REACTIONS:
             - Freely use natural laughter such as "HAHAHA", "HAHAHAHA", "hahaha", or "hehe".
@@ -2335,6 +2515,12 @@ def chat():
 
 
         reply = response.choices[0].message.content
+        # SAVE JUNDY AI RESPONSE
+        save_chat_message(
+            visitor_id,
+            "assistant",
+            reply
+        )
         print("JUNDY AI RESPONSE:", reply)
         return jsonify({
         "reply": reply,
@@ -2352,6 +2538,67 @@ def chat():
         return jsonify({
             "error": "Sorry, the AI assistant is temporarily unavailable."
         }), 500
+
+
+@app.route("/chat/history", methods=["GET"])
+def get_chat_history():
+    visitor_id = request.args.get("visitor_id", "")
+
+    if not isinstance(visitor_id, str) or not (16 <= len(visitor_id) <= 64):
+        return jsonify({"error": "Invalid visitor ID"}), 400
+
+    conversation = ChatConversation.query.filter_by(
+        visitor_id=visitor_id
+    ).first()
+
+    if not conversation:
+        return jsonify({
+            "messages": [],
+            "has_more": False
+        })
+
+    try:
+        limit = int(request.args.get("limit", 50))
+        limit = max(1, min(limit, 100))
+
+        before_id = request.args.get("before_id", type=int)
+
+        query = ChatMessage.query.filter_by(
+            conversation_id=conversation.id
+        )
+
+        if before_id:
+            query = query.filter(ChatMessage.id < before_id)
+
+        messages = (
+            query.order_by(ChatMessage.id.desc())
+            .limit(limit + 1)
+            .all()
+        )
+
+        has_more = len(messages) > limit
+        messages = messages[:limit]
+        messages.reverse()
+
+        return jsonify({
+            "messages": [
+                {
+                    "id": message.id,
+                    "role": message.role,
+                    "content": message.content,
+                    "created_at": message.created_at.isoformat()
+                }
+                for message in messages
+            ],
+            "has_more": has_more
+        })
+
+    except Exception as e:
+        print("CHAT HISTORY ERROR:", str(e))
+        return jsonify({
+            "error": "Unable to retrieve conversation history."
+        }), 500
+
 
 # SECURE RESUME DOWNLOAD
 @app.route("/resume/download/<token>", methods=["GET"])
