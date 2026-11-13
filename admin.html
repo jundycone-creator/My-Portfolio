@@ -512,7 +512,8 @@
 
             #toggleResumeRequests,
             #toggleVisitors,
-            #toggleAppealRequests {
+            #toggleAppealRequests,
+            #toggleSpecialVisitors{
                 border: 1px solid rgba(255, 59, 67, .35);
                 background: rgba(150, 10, 20, .16);
                 color: #ff858a;
@@ -650,6 +651,19 @@
             .special-visitor-item button:active {
                 transform: scale(.97);
             }
+
+            #specialVisitorsContent {
+                max-height: 2000px !important;
+                opacity: 1;
+                overflow: hidden !important;
+                transition: max-height 0.35s ease, opacity 0.25s ease;
+            }
+
+            #specialVisitorsContent.collapsed {
+                max-height: 0 !important;
+                opacity: 0;
+                overflow: hidden !important;
+            }
         </style>
     </head>
 
@@ -743,35 +757,6 @@
                     </div>
                 </div>
 
-                <!-- SPECIAL VISITORS MANAGER -->
-                <div class="section-panel" id="specialVisitorsSection">
-
-                    <div class="section-heading">
-                        <div>
-                            <h3>Special Visitors</h3>
-                            <p>Manage names that receive the personalized greeting and fireworks animation.</p>
-                        </div>
-                    </div>
-
-                    <div class="special-visitors-controls">
-                        <input
-                            type="text"
-                            id="specialVisitorNameInput"
-                            placeholder="Enter a special visitor name"
-                            maxlength="150"
-                        >
-
-                        <button type="button" id="addSpecialVisitorButton">
-                            Add Special Name
-                        </button>
-                    </div>
-
-                    <div id="specialVisitorsList">
-                        <p>Loading special visitors...</p>
-                    </div>
-
-                </div>
-
                 <div class="section-panel">
                     <div class="section-heading">
                         <div>
@@ -813,7 +798,42 @@
                         </table>
                     </div>
                 </div>
+                <!-- SPECIAL VISITORS MANAGER -->
+                <div class="section-panel" id="specialVisitorsSection">
+                    <div class="section-heading">
+                        <div>
+                            <h3>Special Visitors</h3>
+                            <p>Manage names that receive the personalized greeting and fireworks animation.</p>
+                        </div>
+
+                        <button
+                            type="button"
+                            id="toggleSpecialVisitors"
+                            aria-expanded="true"
+                            aria-controls="specialVisitorsContent">
+                            Hide List
+                        </button>
+                    </div>
+
+                    <div id="specialVisitorsContent">
+                        <div class="special-visitors-controls">
+                            <input
+                                type="text"
+                                id="specialVisitorNameInput"
+                                placeholder="Enter special visitor name..."
+                            >
+                            <button type="button" id="addSpecialVisitorButton">
+                                Add Special Name
+                            </button>
+                        </div>
+
+                        <div id="specialVisitorsList">
+                            <p>Loading special visitors...</p>
+                        </div>
+                    </div>
+                </div>
             </section>
+
 
             <!-- RESUME REQUESTS -->
             <section id="resumeSection" class="management-section">
@@ -1867,9 +1887,36 @@
 updatePhilippineClock();
 setInterval(updatePhilippineClock, 1000);
 
+
+
+// TOGGLE SPECIAL VISITORS LIST
+const toggleSpecialVisitorsButton =
+    document.getElementById("toggleSpecialVisitors");
+
+const specialVisitorsContent =
+    document.getElementById("specialVisitorsContent");
+
+if (toggleSpecialVisitorsButton && specialVisitorsContent) {
+    toggleSpecialVisitorsButton.addEventListener("click", () => {
+        const isExpanded =
+            toggleSpecialVisitorsButton.getAttribute("aria-expanded") === "true";
+
+        toggleSpecialVisitorsButton.setAttribute(
+            "aria-expanded",
+            String(!isExpanded)
+        );
+
+        specialVisitorsContent.classList.toggle("collapsed", isExpanded);
+
+        toggleSpecialVisitorsButton.textContent =
+            isExpanded ? "Show List" : "Hide List";
+    });
+}
+
 // SPECIAL VISITORS MANAGER
 
 document.getElementById("addSpecialVisitorButton")
+    
     .addEventListener("click", async () => {
 
         const input = document.getElementById("specialVisitorNameInput");
@@ -2002,6 +2049,8 @@ async function deleteSpecialVisitor(id) {
 document.addEventListener("DOMContentLoaded", () => {
     loadSpecialVisitors();
 });
+
+
 </script>
 
 </body>

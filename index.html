@@ -971,9 +971,27 @@
                 Hi! Need help exploring my portfolio? 👋
             </div>
 
-            <!-- CHATBOT TOGGLE BUTTON -->
+            <!-- AI CHATBOT TOGGLE BUTTON -->
             <button type="button" class="chatbot-toggle" id="chatbotToggle">
-                <i class="fa-solid fa-comments"></i>
+
+                <span class="ai-robot-face">
+                    <span class="ai-robot-antenna"></span>
+
+                    <span class="ai-robot-eyes">
+                        <span class="ai-robot-eye"></span>
+                        <span class="ai-robot-eye"></span>
+                    </span>
+
+                    <span class="ai-robot-mouth"></span>
+
+                    <span class="ai-robot-arm">
+                        <span class="ai-robot-hand">
+                            <span class="ai-robot-finger"></span>
+                            <span class="ai-robot-thumb"></span>
+                        </span>
+                    </span>
+                </span>
+
             </button>
 
             <!-- CHATBOT WINDOW -->
@@ -1042,6 +1060,14 @@
 
                 <!-- QUICK QUESTIONS -->
                 <div class="chatbot-quick-questions">
+                    <button
+                        type="button"
+                        class="close-quick-questions"
+                        id="closeQuickQuestions"
+                        aria-label="Hide suggestions"
+                    >
+                        &times;
+                    </button>
 
                     <button type="button" data-question="Tell me about Jundy.">
                         About Jundy

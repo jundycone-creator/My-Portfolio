@@ -794,10 +794,40 @@ document.addEventListener("DOMContentLoaded", function () {
     const closeButton = document.getElementById("closeChatbot");
     const messages = document.getElementById("chatbotMessages");
     const welcomeMessage = document.getElementById("chatbotWelcomeMessage");
-    window.testChatbotWelcome = updateChatbotWelcome;
     const input = document.getElementById("chatbotInput");
     const sendButton = document.getElementById("chatbotSend");
     const quickQuestions = document.querySelector(".chatbot-quick-questions");
+
+    // JUNDY AI ROBOT EYE TRACKING
+    const chatbotToggle = toggle;
+
+    if (chatbotToggle) {
+        const robotEyes = chatbotToggle.querySelectorAll(".ai-robot-eye");
+
+        document.addEventListener("mousemove", (event) => {
+            const rect = chatbotToggle.getBoundingClientRect();
+
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            const angle = Math.atan2(
+                event.clientY - centerY,
+                event.clientX - centerX
+            );
+
+            const distance = 2;
+
+            const moveX = Math.cos(angle) * distance;
+            const moveY = Math.sin(angle) * distance;
+
+            robotEyes.forEach((eye) => {
+                eye.style.transform =
+                    `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+
+
+    }
 
    // PERSONALIZE CHATBOT WELCOME MESSAGE
     function updateChatbotWelcome() {
@@ -816,9 +846,19 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    // CLOSE QUICK QUESTIONS
+    const closeQuickQuestions = document.getElementById("closeQuickQuestions");
+    
+
+    if (closeQuickQuestions && quickQuestions) {
+        closeQuickQuestions.addEventListener("click", function() {
+            quickQuestions.style.display = "none";
+        });
+    }
+    window.testChatbotWelcome = updateChatbotWelcome;
     // Update greeting when chatbot is opened
     updateChatbotWelcome();
-
+    
 
 
     // OPEN RESUME PREVIEW
@@ -1125,6 +1165,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+
+    
     // DISPLAY MESSAGE
     // ===============================
 // ADD CHAT MESSAGE
@@ -1205,10 +1247,26 @@ function addChatMessage(message, sender) {
     // ==========================================
 
 
+    
     async function getChatbotResponse(message) {
         const text = message.toLowerCase();
 
+        // CREATE TYPING INDICATOR
+        const messages = document.getElementById("chatbotMessages");
 
+        const typingIndicator = document.createElement("div");
+        typingIndicator.className = "typing-indicator";
+        typingIndicator.setAttribute("aria-label", "JUNDY AI is typing");
+
+        for (let i = 0; i < 3; i++) {
+            const dot = document.createElement("span");
+            typingIndicator.appendChild(dot);
+        }
+
+        if (messages) {
+            messages.appendChild(typingIndicator);
+            messages.scrollTop = messages.scrollHeight;
+        }
 
         try {
             // CONNECT TO JUNDY ASSISTANT BACKEND
@@ -1220,12 +1278,12 @@ function addChatMessage(message, sender) {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                    message: message,
-                    history: conversationHistory,
-                    visitor_id: getVisitorId(),
-                    device_name: navigator.userAgentData?.platform || navigator.platform || "Unknown Device",
-                    browser_name: navigator.userAgent
-                })
+                        message: message,
+                        history: conversationHistory,
+                        visitor_id: getVisitorId(),
+                        device_name: navigator.userAgentData?.platform || navigator.platform || "Unknown Device",
+                        browser_name: navigator.userAgent
+                    })
                 }
             );
 
@@ -1273,14 +1331,21 @@ function addChatMessage(message, sender) {
 
         } catch (error) {
             console.error("JUNDY ASSISTANT ERROR:", error);
+
             alert(
                 "JUNDY AI ERROR:\n" +
                 error.name + "\n" +
                 error.message
             );
+
             throw error;
+
+        } finally {
+            // REMOVE TYPING INDICATOR
+            typingIndicator.remove();
         }
     }
+
 
     // GET OR CREATE A UNIQUE VISITOR ID
         function getVisitorId() {
@@ -1423,7 +1488,191 @@ function addChatMessage(message, sender) {
     }
 
     console.log("Chatbot successfully initialized!");
+// JUNDY AI ROBOT EYE TRACKING
+const robotButton = document.getElementById("chatbotToggle");
+const robotEyes = document.querySelectorAll(
+    "#chatbotToggle .ai-robot-eye"
+);
 
+console.log("ROBOT BUTTON:", !!robotButton);
+console.log("ROBOT EYES:", robotEyes.length);
+
+document.addEventListener("mousemove", function(event) {
+    if (!robotButton || robotEyes.length === 0) return;
+
+    const rect = robotButton.getBoundingClientRect();
+
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const x = Math.max(-2, Math.min(2, (event.clientX - centerX) / 20));
+    const y = Math.max(-2, Math.min(2, (event.clientY - centerY) / 20));
+
+    robotEyes.forEach(eye => {
+        eye.style.translate = `${x}px ${y}px`;
+    });
+});
+
+
+
+    // JUNDY AI ROBOT ARM + MARKETING MESSAGES
+
+    const robotFace = document.querySelector(
+        "#chatbotToggle .ai-robot-face"
+    );
+
+    const robotArm = document.querySelector(
+        "#chatbotToggle .ai-robot-arm"
+    );
+
+    const marketingPopup = document.getElementById("chatbotGreeting");
+    
+
+    let robotKiligTimeout;
+
+    const marketingMessages = [
+        "Hey! 👋 Curious about my skills and projects? Let's chat!",
+        "Wait! Discover what JUNDY AI can help you with! 🚀",
+        "Looking for tech solutions? I might have what you need!",
+        "Psst! I've got something interesting to show you. Tap me! 😉",
+        "Need computer or IT assistance? Let's talk! 💻"
+    ];
+
+    let reachTimeout;
+    let retractTimeout;
+    let messageIndex = 0;
+
+    document.addEventListener("mousemove", function(event) {
+
+        if (!robotFace || !robotArm) return;
+
+        clearTimeout(reachTimeout);
+        clearTimeout(retractTimeout);
+
+        // HIDE ARM WHILE CURSOR IS MOVING
+        robotArm.classList.remove("reaching");
+        robotArm.style.width = "0px";
+
+        if (marketingPopup) {
+            marketingPopup.classList.remove("show");
+        }
+
+        const cursorX = event.clientX;
+        const cursorY = event.clientY;
+
+        // WAIT UNTIL CURSOR STOPS
+        reachTimeout = setTimeout(function() {
+
+            const rect = robotFace.getBoundingClientRect();
+
+            const originX = rect.right - 3;
+            const originY = rect.top + rect.height / 2;
+
+            const deltaX = cursorX - originX;
+            const deltaY = cursorY - originY;
+
+            const distance = Math.hypot(deltaX, deltaY);
+            const angle = Math.atan2(deltaY, deltaX);
+
+            // SAD REACTION IF CURSOR IS TOO FAR
+            if (distance > 300) {
+                robotFace.classList.add("sad");
+            } else {
+                robotFace.classList.remove("sad");
+            }
+
+            robotArm.style.transform =
+                `rotate(${angle * (180 / Math.PI)}deg)`;
+
+            // SHOW AND EXTEND ARM WHEN CURSOR STOPS
+            robotArm.classList.add("reaching");
+
+            requestAnimationFrame(() => {
+                robotArm.style.width =
+                    `${Math.max(28, distance - 15)}px`;
+            });
+
+            // SHOW ROTATING MARKETING MESSAGE
+            if (marketingPopup) {
+                marketingPopup.textContent =
+                    marketingMessages[messageIndex];
+
+                marketingPopup.classList.add("show");
+
+                messageIndex =
+                    (messageIndex + 1) % marketingMessages.length;
+            }
+
+            // MOBILE ROBOT MESSAGE — NO ARM
+            if (window.matchMedia("(max-width: 600px)").matches) {
+
+                setTimeout(() => {
+                    if (!marketingPopup) return;
+
+                    marketingPopup.textContent =
+                        "Aww, you're far away! 🥺💔 Come closer and let's chat!";
+
+                    marketingPopup.classList.add("show");
+
+                    setTimeout(() => {
+                        marketingPopup.classList.remove("show");
+                    }, 4000);
+
+                }, 2000);
+            }
+
+            // RETRACT AFTER 2 SECONDS
+            retractTimeout = setTimeout(function() {
+
+                robotArm.style.width = "0px";
+                robotArm.classList.remove("reaching");
+                robotFace.classList.remove("sad");
+
+                if (marketingPopup) {
+                    marketingPopup.style.display = "show";
+                }
+
+            }, 2000);
+
+        }, 1500);
+
+    });
+
+    // JUNDY AI ROBOT KILIG DETECTION
+
+
+    document.addEventListener("mousemove", function(event) {
+
+        if (!robotFace || !robotButton) return;
+
+        const rect = robotButton.getBoundingClientRect();
+
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        const distance = Math.hypot(
+            event.clientX - centerX,
+            event.clientY - centerY
+        );
+
+        clearTimeout(robotKiligTimeout);
+
+        // CURSOR APPROACHING THE ROBOT
+        if (distance <= 100) {
+
+            robotKiligTimeout = setTimeout(() => {
+                robotFace.classList.add("lovestruck");
+            }, 300);
+
+        } else {
+
+            robotFace.classList.remove("lovestruck");
+
+        }
+
+    });
+
+    
 });
 
 // UNBLUR PROFILE WHEN GET IN TOUCH IS CLICKED
