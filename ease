@@ -1,0 +1,69 @@
+warning: in the working copy of 'Mydesign.css', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/Mydesign.css b/Mydesign.css[m
+[1mindex ebe6cab..a504308 100644[m
+[1m--- a/Mydesign.css[m
+[1m+++ b/Mydesign.css[m
+[36m@@ -4330,7 +4330,7 @@[m [ma {[m
+     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);[m
+     color: #fff;[m
+     z-index: 99999;[m
+[31m-    animation: creatorPopupIn 0.4s ease;[m
+[32m+[m[32m    animation: creatorPopupIn 0.5s ease;[m
+ }[m
+ [m
+ .creator-popup-header {[m
+[1mdiff --git a/chatbot-backend/app.py b/chatbot-backend/app.py[m
+[1mindex eb54527..24cd6c5 100644[m
+[1m--- a/chatbot-backend/app.py[m
+[1m+++ b/chatbot-backend/app.py[m
+[36m@@ -25,6 +25,7 @@[m [mimport traceback[m
+ import html[m
+ [m
+ [m
+[32m+[m
+ # Load API key from .env[m
+ load_dotenv()[m
+ [m
+[36m@@ -1831,15 +1832,20 @@[m [mdef register_visitor():[m
+         print("DATABASE VISITOR NAME:", visitor.visitor_name if visitor else None)[m
+ [m
+         if visitor:[m
+[32m+[m[32m            if not visitor.visitor_name:[m
+[32m+[m[32m                visitor.visitor_name = visitor_name[m
+[32m+[m
+             visitor.device_name = device_name[m
+             visitor.browser_name = browser_name[m
+             visitor.last_seen = now[m
+ [m
+         db.session.commit()[m
+                 # Check whether this visitor is in the special visitors list[m
+[32m+[m[32m        registered_name = (visitor.visitor_name or visitor_name).strip()[m
+[32m+[m
+         is_special_visitor = SpecialVisitor.query.filter([m
+             db.func.lower(SpecialVisitor.name) ==[m
+[31m-            visitor.visitor_name.strip().lower()[m
+[32m+[m[32m            registered_name.lower()[m
+         ).first() is not None[m
+ [m
+                 # Check for Jundy's recognized Admin device[m
+[36m@@ -1874,6 +1880,7 @@[m [mdef register_visitor():[m
+     except Exception as e:[m
+         db.session.rollback()[m
+         print("VISITOR REGISTRATION ERROR:", str(e))[m
+[32m+[m[32m        traceback.print_exc()[m
+         return jsonify({"error": "Unable to register visitor."}), 500[m
+ [m
+ [m
+[1mdiff --git a/junds_script.js b/junds_script.js[m
+[1mindex 518a8b3..551956b 100644[m
+[1m--- a/junds_script.js[m
+[1m+++ b/junds_script.js[m
+[36m@@ -2208,7 +2208,7 @@[m [mfunction showAIUsageNotice(onAccept) {[m
+ [m
+         // First-time visitor: show welcome popup.[m
+         modal.style.display = "flex";[m
+[31m-        nameInput.focus();[m
+[32m+[m[32m        //nameInput.focus();[m
+ [m
+         form.addEventListener("submit", async function (event) {[m
+             event.preventDefault();[m

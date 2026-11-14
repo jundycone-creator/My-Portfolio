@@ -877,8 +877,8 @@
                 display: flex;
                 flex-direction: column;
                 gap: 5px;
-                max-height: 650px;
-                min-height: 300px;
+                max-height: 100px;
+                min-height: 100px;
                 padding: 12px;
                 overflow-y: auto;
                 border: 1px solid rgba(255,255,255,.06);
@@ -965,35 +965,29 @@
             }
 
             /* FIX CONVERSATION MESSAGE HEIGHT */
+            /* COMPACT CONVERSATION MESSAGE BUBBLES */
 
             #conversationMessages {
                 align-items: flex-start;
+                gap: 6px !important;
             }
 
             #conversationMessages .conversation-message {
-                display: block !important;
                 height: auto !important;
-                min-height: 0 !important;
+                min-height: 1 !important;
                 max-height: none !important;
-                flex: 0 0 auto !important;
-                justify-content: flex-start !important;
-                padding: 10px 12px !important;
+                padding: 5px 10px !important;
                 margin: 0 !important;
-                box-sizing: border-box;
+                gap: 0 !important;
+                line-height: 0.5 !important;
             }
 
             #conversationMessages .message-role {
-                margin: 0 0 4px !important;
+                font-size: 9px !important;
+                margin: 0 0 2px !important;
             }
 
-            #conversationMessages .message-content {
-                margin: 0 !important;
-            }
-
-            #conversationMessages .conversation-message-time {
-                margin-top: 5px !important;
-            }
-
+            #conversationMessages .message-content,
             #conversationMessages .conversation-message > div {
                 display: block !important;
                 width: auto !important;
@@ -1001,19 +995,20 @@
                 min-height: 0 !important;
                 max-height: none !important;
                 flex: none !important;
+
                 padding: 0 !important;
                 margin: 0 !important;
-                line-height: 1.4 !important;
+                font-size: 12px !important;
+                line-height: 0.9 !important;
+                letter-spacing: -0.2px !important;
             }
 
-            #conversationMessages .conversation-message {
-                display: flex !important;
-                flex-direction: column !important;
-                justify-content: flex-start !important;
-                gap: 3px !important;
-                height: auto !important;
-                min-height: 0 !important;
+            #conversationMessages .conversation-message-time {
+                font-size: 9px !important;
+                margin-top: 3px !important;
             }
+
+            
         </style>
     </head>
 

@@ -3079,6 +3079,24 @@ a {
     transition: .3s ease;
 }
 
+/* MOBILE CHATBOT WINDOW */
+@media (max-width: 600px) {
+
+    .chatbot-window {
+        position: fixed;
+        bottom: 80px;
+        right: 10px;
+        left: 10px;
+
+        width: auto;
+        height: min(70dvh, 540px);
+        max-height: calc(100dvh - 110px);
+
+        border-radius: 16px;
+    }
+
+}
+
 .chatbot-window.active {
     opacity: 1;
     visibility: visible;
